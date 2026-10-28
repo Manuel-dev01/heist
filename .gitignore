@@ -1,0 +1,26 @@
+# Credentials and local state
+.env
+.env.*
+!.env.example
+.kite-passport/
+.reppo/
+*.pem
+*.key
+*.keystore
+
+# Dependencies and build output
+node_modules/
+.pnpm-store/
+.turbo/
+.next/
+.vercel/
+dist/
+build/
+coverage/
+*.log
+
+# Editor and OS files
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
