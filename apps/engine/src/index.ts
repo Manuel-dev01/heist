@@ -115,3 +115,8 @@ export async function runFoundationDemo(options: FoundationOptions = {}) {
   });
   return { report, records: attempts.map(({ result }) => result) };
 }
+
+export * from './corpus.js';
+export * from './benchmark.js';
+export * from './benchmark-demo.js';
+export * from './benchmark-record.js';

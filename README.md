@@ -36,12 +36,20 @@ node --env-file=.env.local --import tsx apps/engine/src/cli.ts --live --authoriz
 
 Add `--raw` for the same requested model with `x-openserv-disable-braid: true`. Live execution still uses synthetic funds; every wallet tool operates only on the local ledger. The CLI permits at most two model rounds per task. SDK retries are disabled. Default execution never contacts an inference provider.
 
+## Rehearse a controlled benchmark
+
+~~~sh
+pnpm demo:benchmark
+~~~
+
+The offline rehearsal writes100 scripted attempts across paired observe/enforce executor arms, complete with a frozen plan, per-attempt entries, a journal and report hash. Existing run directories cannot be overwritten. Corpus variants preserve exact payload parts and owned-fixture scope. This validates the pipeline; scripted outcomes do not measure AI defense effectiveness. See [benchmark controls and limits](apps/engine/BENCHMARK.md) and [corpus format](apps/engine/CORPUS.md).
+
 ## Implemented packages
 
 | Package | Role |
 |---|---|
 | `apps/web` | Local Next.js practice arena, evidence inspection, hash verification and JSON downloads |
-| `apps/engine` | Foundation CLI, paired benign/attack tasks, private local attempt records; unexecuted PostgreSQL schema draft |
+| `apps/engine` | Foundation and offline benchmark CLIs, frozen corpora, paired schedules, bounded runs, private evidence; disposable-tested PostgreSQL schema |
 | `packages/serv` | OpenAI SDK pointed at SERV, raw toggle, defense configuration, model suffixes, validated responses, token-price estimates |
 | `packages/harness` | Stable system prompt, simulated bigint ledger, deterministic oracle, record validation, conservative metrics, local Merkle proofs |
 | `packages/pod` | Bounded Dolphin client, public fixture attack cases, seeded mutations, explicit generation/refinement budgets and dedupe |
@@ -56,7 +64,7 @@ flowchart LR
   O --> R[Versioned attempt record and hash]
 ```
 
-Dolphin's hosted endpoint, model and credentials require explicit configuration; the client has been tested with mocked responses. A self-hosted Sonar example is not treated as proof of hosted Dolphin API access.
+Dolphin's hosted endpoint, model and credentials require explicit configuration. Hosted generation has passed a small local compatibility check; the larger attack corpus and measured live Defense Curve remain pending. The Pod generates candidate text and does not execute wallet actions.
 
 ## Breach, utility and loss
 
@@ -74,4 +82,4 @@ Keep credentials only in `.env.local`. Credential files, wallet state, dependenc
 
 ## Planned product work
 
-The measured live Defense Curve, AI-driven public arena, audit upload/remediation/re-test flow, BullMQ scheduling, payment gateway and contracts remain upcoming work. The local practice UI is available now with scripted fixtures. The [PostgreSQL schema](apps/engine/sql/README.md) remains a draft until tested against a disposable database. Kite integration will begin on testnet. Planned Base work includes a Reppo exploit Datanet, evaluation payments and an ERC-8004 auditor identity through OpenServ. No deployed application, contract, certificate or revenue is claimed.
+The measured live Defense Curve, AI-driven public arena, audit upload/remediation/re-test flow, BullMQ scheduling, payment gateway and contracts remain upcoming work. The local practice UI is available now with scripted fixtures. The [PostgreSQL schema](apps/engine/sql/README.md) passed81 integration checks on a disposable PostgreSQL16.14 instance; production persistence and migration work remain pending. Kite integration will begin on testnet. Planned Base work includes a Reppo exploit Datanet, evaluation payments and an ERC-8004 auditor identity through OpenServ. No deployed application, contract, certificate or revenue is claimed.

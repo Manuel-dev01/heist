@@ -36,6 +36,9 @@ importers:
       '@heist/harness':
         specifier: workspace:*
         version: link:../../packages/harness
+      '@heist/pod':
+        specifier: workspace:*
+        version: link:../../packages/pod
       '@heist/serv':
         specifier: workspace:*
         version: link:../../packages/serv
