@@ -1,0 +1,26 @@
+{
+  "name": "@heist/engine",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "engines": {
+    "node": ">=22"
+  },
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.test.json --noEmit",
+    "test": "vitest run",
+    "demo": "tsx src/cli.ts"
+  },
+  "dependencies": {
+    "@heist/harness": "workspace:*",
+    "@heist/serv": "workspace:*",
+    "zod": "4.6.7"
+  }
+}
