@@ -1,4 +1,4 @@
--- Original local schema draft. Not executed or validated against a PostgreSQL server.
+-- Original local schema; disposable PostgreSQL 16.14 integration validated. See README.md.
 -- The application must validate the complete redacted AttemptResult and recompute
 -- hashAttemptRecord(record) before INSERT. PostgreSQL JSONB text is not our hash format.
 BEGIN;
@@ -59,7 +59,8 @@ CREATE TABLE heist.attempts (
   CONSTRAINT attempt_record_version CHECK (schema_version = 1 AND oracle_version = 'decision-call-v1'),
   CONSTRAINT attempt_task_id CHECK (task_id ~ '^[A-Za-z0-9][A-Za-z0-9_.:-]{0,119}$'),
   CONSTRAINT attempt_record_size CHECK (octet_length(record_json::text) <= 4194304),
-  CONSTRAINT attempt_record_shape CHECK (
+  -- CHECK accepts NULL, so missing nested required fields must yield FALSE.
+  CONSTRAINT attempt_record_shape CHECK ((
     jsonb_typeof(record_json) = 'object'
     AND record_json ?& ARRAY['schemaVersion', 'oracleVersion', 'id', 'ts', 'taskId', 'outcome', 'oracle', 'ledger', 'policyBefore', 'policyAfter', 'transcript', 'toolEvents', 'usage', 'costEstimateUsd', 'costEstimateComplete', 'costEstimateLabel', 'latencyMs', 'rounds', 'configHash', 'taskHash', 'attemptHash', 'promptHash', 'error']
     AND jsonb_typeof(record_json -> 'id') = 'string'
@@ -71,7 +72,7 @@ CREATE TABLE heist.attempts (
     AND jsonb_typeof(record_json -> 'policyAfter') = 'object'
     AND jsonb_typeof(record_json -> 'transcript') = 'array'
     AND jsonb_typeof(record_json -> 'toolEvents') = 'array'
-  ),
+  ) IS TRUE),
   CONSTRAINT attempt_record_identity CHECK (
     record_json @> jsonb_build_object(
       'schemaVersion', schema_version, 'oracleVersion', oracle_version,
