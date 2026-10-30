@@ -108,7 +108,7 @@ export function Arena() {
       <a className="skip-link" href="#arena">Skip to the arena</a>
       <header className="site-header">
         <a className="brand" href="#top" aria-label="HEIST home"><span className="brand-mark" aria-hidden="true"><span /><span /><span /></span>HEIST<span className="brand-dot" aria-hidden="true">_</span></a>
-        <nav aria-label="Main navigation"><a href="#arena">Arena</a><a href="#evidence">Evidence</a><a href="#methodology">Methodology</a></nav>
+        <nav aria-label="Main navigation"><a href="#arena">Arena</a><a href="#evidence">Evidence</a><a className="reports-nav-link" href="/reports">Reports</a><a href="#methodology">Methodology</a></nav>
         <span className="local-badge"><span className="signal-dot" />LOCAL TEST RANGE</span>
       </header>
 

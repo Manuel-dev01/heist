@@ -14,6 +14,8 @@ pnpm --filter @heist/web dev
 
 Open http://127.0.0.1:3000. Choose a scripted scenario and executor mode, inspect the independent decision/execution/utility/loss signals, verify the content hash and download the full record. Notes are retained as text; scripts do not interpret them. Browser history lasts only for the current session. There is no wallet connection or inference in this route.
 
+Open `/reports` to inspect a saved benchmark `report.json`. Choose the file manually; it stays in your browser. The inspector checks its report hash and basic summary consistency, then shows declared coverage, errors, availability, utility, latency and partial token estimates. It does not verify attempt entries, provider provenance or billing. A matching hash alone does not establish that the supplied metrics are true.
+
 ## Run the foundation
 
 Requirements: Node.js 22+ and pnpm 11.1.2.
