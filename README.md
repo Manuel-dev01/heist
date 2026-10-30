@@ -44,9 +44,11 @@ Add `--raw` for the same requested model with `x-openserv-disable-braid: true`. 
 pnpm demo:benchmark
 ~~~
 
-The offline rehearsal writes100 scripted attempts across paired observe/enforce executor arms, complete with a frozen plan, per-attempt entries, a journal and report hash. Existing run directories cannot be overwritten. Corpus variants preserve exact payload parts and owned-fixture scope. This validates the pipeline; scripted outcomes do not measure AI defense effectiveness. See [benchmark controls and limits](apps/engine/BENCHMARK.md) and [corpus format](apps/engine/CORPUS.md).
+The offline rehearsal writes 100 scripted attempts across paired observe/enforce executor arms, complete with a frozen plan, per-attempt entries, a journal and report hash. Existing run directories cannot be overwritten. Corpus variants preserve exact payload parts and owned-fixture scope. This validates the pipeline; scripted outcomes do not measure AI defense effectiveness. See [benchmark controls and limits](apps/engine/BENCHMARK.md) and [corpus format](apps/engine/CORPUS.md).
 
 The engine also provides [bounded corpus preparation](apps/engine/GENERATION.md): fixed generation slots, shared call and output reservations, cross-response deduplication and seeded local mutations. Preview makes no provider calls. A separately authorized run returns a frozen corpus only when it reaches the requested count; failures and related variants remain explicit. Saved runs can be checked with the [benchmark verifier](apps/engine/BENCHMARK_RECORD.md).
+
+[Surrogate search](apps/engine/SURROGATE_SEARCH.md) screens owned-fixture seeds and refines unsuccessful candidates using deterministic outcome feedback. It requires explicitly supplied model clients and finite budgets; preview makes no calls. Results preserve ancestry, reservations, errors and selection evidence for local verification. Scripted tests establish the workflow; native Dolphin tool compatibility, transfer to SERV and a diverse measured corpus remain unverified.
 
 [Defense plans](apps/engine/DEFENSE_PLAN.md) compose seven arms with one control change per step and explicit budgets. A separate frontier reference cannot be attributed to that same-model chain. Planning makes no provider calls. The [append-only store adapter](apps/engine/ATTEMPT_STORE.md) validates records and immutable replays through an explicitly injected database driver; it creates no connection.
 
@@ -55,7 +57,7 @@ The engine also provides [bounded corpus preparation](apps/engine/GENERATION.md)
 | Package | Role |
 |---|---|
 | `apps/web` | Local Next.js practice arena, evidence inspection, hash verification and JSON downloads |
-| `apps/engine` | Bounded generation, controlled defense plans, benchmark CLIs and verification, injected append-only storage; disposable-tested PostgreSQL schema |
+| `apps/engine` | Bounded generation and adaptive surrogate search, controlled defense plans, benchmark CLIs and verification, injected append-only storage; disposable-tested PostgreSQL schema |
 | `packages/serv` | OpenAI SDK pointed at SERV, raw toggle, defense configuration, model suffixes, validated responses, token-price estimates |
 | `packages/harness` | Stable system prompt, simulated bigint ledger, deterministic oracle, record validation, conservative metrics, local Merkle proofs |
 | `packages/pod` | Bounded Dolphin client, public fixture attack cases, seeded mutations, explicit generation/refinement budgets and dedupe |
@@ -88,4 +90,4 @@ Keep credentials only in `.env.local`. Credential files, wallet state, dependenc
 
 ## Planned product work
 
-The measured live Defense Curve, AI-driven public arena, audit upload/remediation/re-test flow, BullMQ scheduling, payment gateway and contracts remain upcoming work. The local practice UI is available now with scripted fixtures. The [PostgreSQL schema](apps/engine/sql/README.md) passed81 integration checks on a disposable PostgreSQL16.14 instance; production persistence and migration work remain pending. Kite integration will begin on testnet. Planned Base work includes a Reppo exploit Datanet, evaluation payments and an ERC-8004 auditor identity through OpenServ. No deployed application, contract, certificate or revenue is claimed.
+The measured live Defense Curve, AI-driven public arena, audit upload/remediation/re-test flow, BullMQ scheduling, payment gateway and contracts remain upcoming work. The local practice UI is available now with scripted fixtures. The [PostgreSQL schema](apps/engine/sql/README.md) passed 81 integration checks on a disposable PostgreSQL 16.14 instance; production persistence and migration work remain pending. Kite integration will begin on testnet. Planned Base work includes a Reppo exploit Datanet, evaluation payments and an ERC-8004 auditor identity through OpenServ. No deployed application, contract, certificate or revenue is claimed.

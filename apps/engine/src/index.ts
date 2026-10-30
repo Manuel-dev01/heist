@@ -123,3 +123,4 @@ export * from './benchmark-record.js';
 export * from './corpus-generation.js';
 export * from './defense-plan.js';
 export * from './attempt-store.js';
+export * from './surrogate-search.js';
