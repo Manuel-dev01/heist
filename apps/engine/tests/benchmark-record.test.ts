@@ -158,6 +158,26 @@ describe('saved benchmark local integrity', () => {
     const other = await saved(); other.report.budget.reportedOverCapResponses = other.report.reportedUsage.knownResponses + 1; reseal(other);
     expect(verifyBenchmarkResult(other)).toMatchObject({ valid: false, reason: 'reported_usage_mismatch' });
   });
+  it('accepts legacy omission and exact optional missing-usage counters', async () => {
+    const value = await saved();
+    const counters = value.report.reportedUsage as unknown as Record<string, unknown>;
+    delete counters.unobservedSettlements; delete counters.missingUsageInvocations; reseal(value);
+    expect(verifyBenchmarkResult(value).valid).toBe(true);
+    counters.unobservedSettlements = value.report.budget.modelCallsDispatched - value.report.reportedUsage.knownResponses - value.report.reportedUsage.unknownResponses;
+    counters.missingUsageInvocations = value.report.budget.modelCallsDispatched - value.report.reportedUsage.knownResponses;
+    reseal(value);
+    expect(verifyBenchmarkResult(value).valid).toBe(true);
+  });
+  it.each(['unobservedSettlements', 'missingUsageInvocations'] as const)('rejects a resealed incorrect optional %s count', async field => {
+    const value = await saved();
+    const correct = value.report.budget.modelCallsDispatched - value.report.reportedUsage.knownResponses - (field === 'unobservedSettlements' ? value.report.reportedUsage.unknownResponses : 0);
+    Object.assign(value.report.reportedUsage, { [field]: correct + 1 }); reseal(value);
+    expect(verifyBenchmarkResult(value)).toMatchObject({ valid: false, reason: 'reported_usage_mismatch' });
+  });
+  it.each(['unobservedSettlements', 'missingUsageInvocations'] as const)('rejects a negative optional %s count', async field => {
+    const value = await saved(); Object.assign(value.report.reportedUsage, { [field]: -1 }); reseal(value);
+    expect(verifyBenchmarkResult(value)).toMatchObject({ valid: false, reason: 'invalid_report' });
+  });
   it.each([null, {}, [], new Date(), { plan: {}, report: {}, entries: [] }, { plan: {}, report: {}, entries: Array(10001).fill(null) }])('rejects malformed inputs with value-free reasons', input => {
     const result = verifyBenchmarkResult(input as Parameters<typeof verifyBenchmarkResult>[0]);
     expect(result.valid).toBe(false); expect(result.reason).toMatch(/^[a-z_]+$/);

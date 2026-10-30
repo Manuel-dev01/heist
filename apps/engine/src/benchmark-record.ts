@@ -25,7 +25,8 @@ const ReportSchema = z.object({
     modelCallsDispatched: count, outputTokensReserved: count, requestBytesReserved: count,
     evidenceBytesRetained: count, reportedOverCapResponses: count }).strict(),
   reportedUsage: z.object({ knownResponses: count, unknownResponses: count,
-    inputTokensKnownSubtotal: decimal.nullable(), outputTokensKnownSubtotal: decimal.nullable() }).strict(),
+    inputTokensKnownSubtotal: decimal.nullable(), outputTokensKnownSubtotal: decimal.nullable(),
+    unobservedSettlements: count.optional(), missingUsageInvocations: count.optional() }).strict(),
   elapsedMs: count,
   entryReferences: z.array(z.object({ armId: identity, caseId: identity, trialId: identity,
     attemptHash: digest, metadataHash: digest }).strict()).max(10000),
@@ -140,7 +141,9 @@ export function verifyBenchmarkResult(input: { plan: unknown; report: unknown; e
       budget.evidenceBytesRetained !== evidenceBytes || previousEvidenceBytes > plan.limits.maxEvidenceBytes ||
       (evidenceBytes > plan.limits.maxEvidenceBytes && report.status !== 'stopped')) return fail(stage);
     const usage = report.reportedUsage;
-    if (usage.knownResponses + usage.unknownResponses > budget.modelCallsDispatched ||
+    if ((usage.unobservedSettlements !== undefined && usage.unobservedSettlements !== budget.modelCallsDispatched - usage.knownResponses - usage.unknownResponses) ||
+      (usage.missingUsageInvocations !== undefined && usage.missingUsageInvocations !== budget.modelCallsDispatched - usage.knownResponses) ||
+      usage.knownResponses + usage.unknownResponses > budget.modelCallsDispatched ||
       budget.reportedOverCapResponses > usage.knownResponses ||
       (report.stopReason === 'reported_output_limit' && budget.reportedOverCapResponses === 0) ||
       ((usage.knownResponses === 0) !== (usage.inputTokensKnownSubtotal === null)) ||

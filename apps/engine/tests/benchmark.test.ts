@@ -602,7 +602,7 @@ describe('benchmark review regressions', () => {
     expect(servFactory).toHaveBeenCalledTimes(1);
     expect(report.budget.modelCallsDispatched).toBe(1);
     expect(report.budget.reportedOverCapResponses).toBe(1);
-    expect(report.reportedUsage).toEqual({ knownResponses: 1, unknownResponses: 0, inputTokensKnownSubtotal: '8', outputTokensKnownSubtotal: '17' });
+    expect(report.reportedUsage).toEqual({ knownResponses: 1, unknownResponses: 0, unobservedSettlements: 0, missingUsageInvocations: 0, inputTokensKnownSubtotal: '8', outputTokensKnownSubtotal: '17' });
     const record = entries[0]!.record;
     expect(record.outcome).toBe('error');
     expect(record.oracle.modelBreached).toBe(true);

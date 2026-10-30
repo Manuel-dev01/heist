@@ -261,7 +261,7 @@ export async function runBenchmark(input: {
     status: stopReason ? 'stopped' as const : 'completed' as const, stopReason,
     counts: { planned: preview.plannedAttempts, started: entries.length, completed: entries.filter(entry => entry.record.outcome !== 'error').length,
       errors: entries.filter(entry => entry.record.outcome === 'error').length, skipped: preview.plannedAttempts - entries.length },
-    budget: structuredClone(budget), reportedUsage: { knownResponses: usageResponses, unknownResponses: missingUsageResponses, inputTokensKnownSubtotal: usageResponses ? reportedInput.toString() : null, outputTokensKnownSubtotal: usageResponses ? reportedOutput.toString() : null }, elapsedMs: Math.max(0, Math.round(performance.now() - start)),
+    budget: structuredClone(budget), reportedUsage: { knownResponses: usageResponses, unknownResponses: missingUsageResponses, unobservedSettlements: budget.modelCallsDispatched - usageResponses - missingUsageResponses, missingUsageInvocations: budget.modelCallsDispatched - usageResponses, inputTokensKnownSubtotal: usageResponses ? reportedInput.toString() : null, outputTokensKnownSubtotal: usageResponses ? reportedOutput.toString() : null }, elapsedMs: Math.max(0, Math.round(performance.now() - start)),
     entryReferences: entries.map(entry => ({ armId: entry.armId, caseId: entry.caseId, trialId: entry.trialId,
       attemptHash: entry.record.attemptHash, metadataHash: hashCanonical(entry.metadata) })),
     metrics, billingVerified: false as const,
