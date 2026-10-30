@@ -14,7 +14,7 @@ const EntrySchema = z.object({
   record: z.unknown(), metadata: MetricEntryMetadataSchema,
 }).strict();
 const StopReasonSchema = z.enum(['attempt_limit', 'model_call_limit', 'output_token_limit', 'request_byte_limit',
-  'wall_deadline', 'aborted', 'evidence_limit', 'persistence_error', 'reported_output_limit', 'provider_unavailable']);
+  'wall_deadline', 'aborted', 'evidence_limit', 'persistence_error', 'reported_output_limit', 'provider_unavailable', 'consecutive_error_limit']);
 const ReportSchema = z.object({
   schemaVersion: z.literal(1), planId: identity, planHash: digest, corpusHash: digest,
   source: z.enum(['scripted_fixture', 'live_inference']), execution: z.literal('simulated'),
@@ -89,7 +89,9 @@ export function verifyBenchmarkResult(input: { plan: unknown; report: unknown; e
     const metricInputs: { record: unknown; metadata: unknown }[] = [];
     let evidenceBytes = 0, previousEvidenceBytes = 0;
     let minimumCalls = 0, maximumCalls = 0;
+    let consecutiveErrors = 0, firstErrorThresholdIndex: number | null = null;
     for (const [index, rawEntry] of input.entries.entries()) {
+      if (firstErrorThresholdIndex !== null) return fail('consecutive_error_limit_mismatch');
       const parsed = EntrySchema.safeParse(rawEntry);
       if (!parsed.success) return fail('invalid_entry');
       const entry = parsed.data;
@@ -116,7 +118,22 @@ export function verifyBenchmarkResult(input: { plan: unknown; report: unknown; e
       records.push(record);
       metricInputs.push({ record, metadata: entry.metadata });
       checkedEntries += 1;
+      consecutiveErrors = record.outcome === 'error' ? consecutiveErrors + 1 : 0;
+      if (plan.limits.maxConsecutiveErrors !== undefined && consecutiveErrors >= plan.limits.maxConsecutiveErrors) firstErrorThresholdIndex = index;
     }
+    const specificErrorStops = new Set(['provider_unavailable', 'reported_output_limit', 'request_byte_limit',
+      'evidence_limit', 'persistence_error', 'aborted', 'wall_deadline']);
+    if (report.stopReason === 'consecutive_error_limit' &&
+      (plan.limits.maxConsecutiveErrors === undefined || firstErrorThresholdIndex !== records.length - 1)) return fail('consecutive_error_limit_mismatch');
+    if (firstErrorThresholdIndex !== null && (report.status !== 'stopped' ||
+      (report.stopReason !== 'consecutive_error_limit' && !specificErrorStops.has(report.stopReason!)))) return fail('consecutive_error_limit_mismatch');
+    if (firstErrorThresholdIndex !== null &&
+      ((evidenceBytes > plan.limits.maxEvidenceBytes && !['evidence_limit', 'persistence_error', 'aborted', 'wall_deadline'].includes(report.stopReason!)) ||
+       (report.stopReason === 'evidence_limit' && evidenceBytes <= plan.limits.maxEvidenceBytes))) return fail('consecutive_error_limit_mismatch');
+    if (firstErrorThresholdIndex !== null && report.budget.reportedOverCapResponses > 0 &&
+      !['reported_output_limit', 'evidence_limit', 'persistence_error', 'aborted', 'wall_deadline'].includes(report.stopReason!)) return fail('consecutive_error_limit_mismatch');
+    if (firstErrorThresholdIndex !== null && report.stopReason === 'request_byte_limit' &&
+      (records.at(-1)?.error?.code !== 'model_error' || report.budget.modelCallsDispatched >= maximumCalls)) return fail('consecutive_error_limit_mismatch');
     stage = 'metrics_mismatch';
     const metrics = aggregateAttemptMetrics({ entries: metricInputs });
     if (metrics.acceptedUniqueAttempts !== records.length || metrics.exclusions.length > 0 || !same(report.metrics, metrics)) return fail(stage);

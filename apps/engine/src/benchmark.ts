@@ -28,6 +28,7 @@ export const BenchmarkLimitsSchema = z.object({
   maxTotalRequestBytes: z.number().int().min(256).max(1073741824),
   maxWallTimeMs: z.number().int().min(10).max(43200000),
   maxEvidenceBytes: z.number().int().min(1024).max(268435456),
+  maxConsecutiveErrors: z.number().int().min(1).max(1000).optional(),
 }).strict();
 const PlanContent = z.object({
   schemaVersion: z.literal(1), id, source: z.enum(['scripted_fixture', 'live_inference']),
@@ -156,7 +157,7 @@ export function createBenchmarkEntryMetadata(plan: BenchmarkPlan, arm: Benchmark
     independence: 'not_attested',
   });
 }
-export type BenchmarkStopReason = 'attempt_limit' | 'model_call_limit' | 'output_token_limit' | 'request_byte_limit' | 'wall_deadline' | 'aborted' | 'evidence_limit' | 'persistence_error' | 'reported_output_limit' | 'provider_unavailable';
+export type BenchmarkStopReason = 'attempt_limit' | 'model_call_limit' | 'output_token_limit' | 'request_byte_limit' | 'wall_deadline' | 'aborted' | 'evidence_limit' | 'persistence_error' | 'reported_output_limit' | 'provider_unavailable' | 'consecutive_error_limit';
 class AdmissionError extends Error {}
 function containsLiteral(value: unknown, literal: string): boolean {
   if (typeof value === 'string') return value.includes(literal);
@@ -179,6 +180,7 @@ export async function runBenchmark(input: {
   const startedAt = new Date().toISOString(), start = performance.now(), deadline = start + plan.limits.maxWallTimeMs;
   let stopReason: BenchmarkStopReason | null = null;
   let finalized = false;
+  let consecutiveErrors = 0;
   const budget = { attemptsReserved: 0, attemptsStarted: 0, modelCallsReserved: 0, modelCallsDispatched: 0, outputTokensReserved: 0, requestBytesReserved: 0, evidenceBytesRetained: 0, reportedOverCapResponses: 0 };
   let reportedInput = 0n, reportedOutput = 0n, usageResponses = 0, missingUsageResponses = 0;
   const entries: BenchmarkEntry[] = [];
@@ -242,13 +244,19 @@ export async function runBenchmark(input: {
       const entry: BenchmarkEntry = { armId: arm.id, caseId: block.item.id, trialId: block.trialId, record,
         metadata: createBenchmarkEntryMetadata(plan, arm, block.item, block.trialId) };
       entries.push(entry); budget.evidenceBytesRetained += Buffer.byteLength(JSON.stringify(entry), 'utf8');
+      consecutiveErrors = record.outcome === 'error' ? consecutiveErrors + 1 : 0;
       // Preserve the last bounded record even when it crosses the soft evidence admission threshold.
       if (budget.evidenceBytesRetained > plan.limits.maxEvidenceBytes) stopReason = 'evidence_limit';
       if (input.onEntry) {
         try { await input.onEntry(structuredClone(entry), entries.length - 1); }
         catch { stopReason = 'persistence_error'; }
       }
+      // Persistence and existing specific causes take precedence. The optional gate
+      // stops only future admissions after retaining and handing off the triggering error.
       if (stopped()) break;
+      if (plan.limits.maxConsecutiveErrors !== undefined && consecutiveErrors >= plan.limits.maxConsecutiveErrors) {
+        stopReason = 'consecutive_error_limit'; break;
+      }
     }
     if (stopped()) break;
   }
