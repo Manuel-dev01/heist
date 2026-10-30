@@ -121,3 +121,5 @@ export * from './benchmark.js';
 export * from './benchmark-demo.js';
 export * from './benchmark-record.js';
 export * from './corpus-generation.js';
+export * from './defense-plan.js';
+export * from './attempt-store.js';

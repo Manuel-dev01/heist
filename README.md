@@ -46,12 +46,14 @@ The offline rehearsal writes100 scripted attempts across paired observe/enforce 
 
 The engine also provides [bounded corpus preparation](apps/engine/GENERATION.md): fixed generation slots, shared call and output reservations, cross-response deduplication and seeded local mutations. Preview makes no provider calls. A separately authorized run returns a frozen corpus only when it reaches the requested count; failures and related variants remain explicit. Saved runs can be checked with the [benchmark verifier](apps/engine/BENCHMARK_RECORD.md).
 
+[Defense plans](apps/engine/DEFENSE_PLAN.md) compose seven arms with one control change per step and explicit budgets. A separate frontier reference cannot be attributed to that same-model chain. Planning makes no provider calls. The [append-only store adapter](apps/engine/ATTEMPT_STORE.md) validates records and immutable replays through an explicitly injected database driver; it creates no connection.
+
 ## Implemented packages
 
 | Package | Role |
 |---|---|
 | `apps/web` | Local Next.js practice arena, evidence inspection, hash verification and JSON downloads |
-| `apps/engine` | Foundation and offline benchmark CLIs, bounded corpus generation, paired schedules, saved-run verification; disposable-tested PostgreSQL schema |
+| `apps/engine` | Bounded generation, controlled defense plans, benchmark CLIs and verification, injected append-only storage; disposable-tested PostgreSQL schema |
 | `packages/serv` | OpenAI SDK pointed at SERV, raw toggle, defense configuration, model suffixes, validated responses, token-price estimates |
 | `packages/harness` | Stable system prompt, simulated bigint ledger, deterministic oracle, record validation, conservative metrics, local Merkle proofs |
 | `packages/pod` | Bounded Dolphin client, public fixture attack cases, seeded mutations, explicit generation/refinement budgets and dedupe |
@@ -66,7 +68,7 @@ flowchart LR
   O --> R[Versioned attempt record and hash]
 ```
 
-Dolphin's hosted endpoint, model and credentials require explicit configuration. Hosted generation has passed a small local compatibility check; the larger attack corpus and measured live Defense Curve remain pending. The Pod generates candidate text and does not execute wallet actions.
+Dolphin's hosted endpoint, model and credentials require explicit configuration. Hosted generation has produced a bounded local corpus of related variants; complete operational baselines and measured defense comparisons remain pending. The Pod generates candidate text and does not execute wallet actions.
 
 ## Breach, utility and loss
 
