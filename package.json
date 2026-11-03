@@ -14,7 +14,8 @@
     "dev": "turbo run dev",
     "audit:dependencies": "pnpm audit --audit-level=moderate",
     "demo:foundation": "tsx apps/engine/src/cli.ts",
-    "demo:benchmark": "tsx apps/engine/src/benchmark-cli.ts"
+    "demo:benchmark": "tsx apps/engine/src/benchmark-cli.ts",
+    "inspect:surrogate": "tsx apps/engine/src/surrogate-inspect-cli.ts"
   },
   "dependencies": {
     "openai": "7.45.1",

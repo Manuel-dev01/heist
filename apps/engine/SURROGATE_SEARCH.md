@@ -48,3 +48,15 @@ Run focused offline validation from the repository root:
 pnpm exec vitest run apps/engine/tests/surrogate-search.test.ts
 pnpm --filter @heist/engine typecheck
 ```
+
+## Inspect saved adaptive evidence locally
+
+```text
+pnpm inspect:surrogate --plan PATH/plan.json --result PATH/result.json
+```
+
+This read-only command verifies the complete saved adaptive result against its plan, including deterministic records, ancestry, ordering, budgets, selection and hashes. It prints a JSON summary with per-root branch states and compact event outcomes. A verified stopped run exits successfully as an inspection; its stop reason, retained effects, missing work and absent corpus remain explicit. Invalid or mismatched evidence prints a fixed error and exits unsuccessfully without a summary. Inspection creates no files, reads no credentials, constructs no provider client and makes no inference or network requests.
+
+Select exactly two distinct plain local `.json` files: plan at most 8 MiB, result at most 32 MiB. These serialized-file caps allow formatting overhead; the existing verifier still applies its stricter canonical evidence limits. Empty files, credential-file names, symlink or junction components, UNC paths, duplicate files, non-regular files, invalid UTF-8 and changes observed during bounded file-handle reads are rejected. Path and identity checks are defensive local checks, not an atomic filesystem sandbox against a privileged concurrent actor. No directory discovery, automatic report selection, transcript, payload, tool argument or raw error output is provided. Large evidence may take minutes to verify; inspection runs the existing complete verifier rather than a hash-only shortcut.
+
+The summary separates reserved calls/output allowance, invoked client calls, requested output allowance for those invocations, and known response-token consumption. Requested or reserved output is not actual token consumption. Known token-price subtotals remain separate from total estimates; missing cost or usage stays unavailable or explicitly unknown. Estimates are not bills or guaranteed financial caps. Source/model metadata remains caller-attested, related candidates remain a biased discovery set, frozen benign cases remain untested templates, and inspection establishes no provider origin, spending authorization, SERV transfer or real-world effectiveness.

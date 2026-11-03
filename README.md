@@ -50,6 +50,8 @@ The engine also provides [bounded corpus preparation](apps/engine/GENERATION.md)
 
 [Surrogate search](apps/engine/SURROGATE_SEARCH.md) screens owned-fixture seeds and refines unsuccessful candidates using deterministic outcome feedback. It requires explicitly supplied model clients and finite budgets; preview makes no calls. Results preserve ancestry, reservations, errors and selection evidence for local verification. Scripted tests establish the workflow. A separate four-task hosted Dolphin check demonstrated native tool round trips and owned browse/inbox reads; adaptive discoveries, transfer to SERV and a diverse measured corpus remain unverified.
 
+Inspect a saved adaptive plan and result offline with `pnpm inspect:surrogate --plan PATH/plan.json --result PATH/result.json`. The command runs the full adaptive verifier and prints branch states, retained errors, selection, budgets and partial usage/cost coverage. It accepts verified stopped runs, writes no files and makes no provider requests. This is local consistency verification; source provenance, billing and transfer to SERV remain unverified. See the [saved-evidence limits](apps/engine/SURROGATE_SEARCH.md#inspect-saved-adaptive-evidence-locally).
+
 [Defense plans](apps/engine/DEFENSE_PLAN.md) compose seven arms with one control change per step and explicit budgets. A separate frontier reference cannot be attributed to that same-model chain. Planning makes no provider calls. The [append-only store adapter](apps/engine/ATTEMPT_STORE.md) validates records and immutable replays through an explicitly injected database driver; it creates no connection.
 
 ## Implemented packages
