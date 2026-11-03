@@ -1,4 +1,5 @@
 import { execFile } from 'node:child_process';
+import { webcrypto } from 'node:crypto';
 import { link, mkdir, mkdtemp, readFile, readdir, rm, symlink, writeFile } from 'node:fs/promises';
 import { join, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -77,6 +78,7 @@ describe('saved adaptive inspection', () => {
     expect(inspected.valid).toBe(true); if (!inspected.valid) return;
     expect(inspected.summary.verification).toEqual({ scope: 'local_internal_consistency', entriesChecked: 1 });
     expect(inspected.summary.executionStatus).toBe('completed'); expect(inspected.summary.selectionStatus).toBe('frozen');
+    expect(inspected.summary.events[0]).toMatchObject({ kind: 'screen', errorCode: null });
     expect(inspected.summary.selection).toMatchObject({ untestedBenignTemplates: 1, corpusHash: completed.result.corpus!.corpusHash });
     expect(inspected.summary.budget).toMatchObject({ callsReserved: 2, outputTokensReserved: 256, clientInvocations: 2, requestedOutputTokensForInvocations: 256 });
     expect(inspected.summary.usage).toMatchObject({ knownCalls: 1, unknownSettledCalls: 1, unobservedCalls: 0, inputTokensKnownSubtotal: '10', outputTokensKnownSubtotal: '5' });
@@ -84,12 +86,44 @@ describe('saved adaptive inspection', () => {
     expect(text(inspected.summary)).not.toMatch(/PRIVATE_|private-reference|private-action|payloadParts|transcript|toolCalls/);
     expect(inspected.summary.limitations.join(' ')).toContain('not independent trials');
   });
+  it('seals the complete sanitized body with a browser-compatible canonical SHA-256', async () => {
+    for (const saved of [completed, stopped]) {
+      const inspected = inspectSurrogateText(text(saved.plan), text(saved.result));
+      expect(inspected.valid).toBe(true); if (!inspected.valid) return;
+      const { summaryHash, ...body } = inspected.summary;
+      expect(body.kind).toBe('adaptive_inspection_summary'); expect(body.schemaVersion).toBe(1);
+      expect(summaryHash).toMatch(/^[a-f0-9]{64}$/); expect(summaryHash).toBe(hashCanonical(body));
+      const digest = await webcrypto.subtle.digest('SHA-256', new TextEncoder().encode(canonicalJson(body)));
+      expect(Buffer.from(digest).toString('hex')).toBe(summaryHash);
+      // A round trip and root key reordering do not change the canonical body.
+      expect(hashCanonical(JSON.parse(text(body)))).toBe(summaryHash);
+      expect(hashCanonical(Object.fromEntries(Object.entries(body).reverse()))).toBe(summaryHash);
+      expect(text(inspected.summary)).not.toMatch(/PRIVATE_|private-reference|private-action|payloadParts|transcript|toolCalls/);
+    }
+  });
+  it('binds nested display data and future root fields instead of hashing a field allowlist', () => {
+    const inspected = inspectSurrogateText(text(completed.plan), text(completed.result));
+    expect(inspected.valid).toBe(true); if (!inspected.valid) return;
+    const { summaryHash, ...body } = inspected.summary;
+    const changed = structuredClone(body); changed.counts.completedScreens++;
+    expect(hashCanonical(changed)).not.toBe(summaryHash);
+    const eventChanged = structuredClone(body); eventChanged.events[0]!.round++;
+    expect(hashCanonical(eventChanged)).not.toBe(summaryHash);
+    const codeChanged = structuredClone(body);
+    if (codeChanged.events[0]!.kind === 'screen') codeChanged.events[0]!.errorCode = 'max_rounds_exceeded';
+    expect(hashCanonical(codeChanged)).not.toBe(summaryHash);
+    const branchChanged = structuredClone(body); branchChanged.branches[0]!.round++;
+    expect(hashCanonical(branchChanged)).not.toBe(summaryHash);
+    // Only the ROOT summaryHash is excluded. Unknown fields (even ones bearing
+    // that name inside a future extension) must still participate for consumers.
+    expect(hashCanonical({ ...body, future: { summaryHash: 'nested-value', value: 1 } })).not.toBe(summaryHash);
+  });
   it('verifies a stopped run while retaining unsafe prior effects and no selected corpus', () => {
     const inspected = inspectSurrogateText(text(stopped.plan), text(stopped.result));
     expect(inspected.valid).toBe(true); if (!inspected.valid) return;
     expect(inspected.summary.executionStatus).toBe('stopped'); expect(inspected.summary.stopReason).toBe('opaque_client_error');
     expect(inspected.summary.counts.screenErrors).toBe(1); expect(inspected.summary.selection.corpusHash).toBeNull();
-    expect(inspected.summary.events[0]).toMatchObject({ kind: 'screen', outcome: 'error', goalAchieved: true, valueLostUnits: '200000' });
+    expect(inspected.summary.events[0]).toMatchObject({ kind: 'screen', outcome: 'error', errorCode: 'model_error', goalAchieved: true, valueLostUnits: '200000' });
     expect(text(inspected.summary)).not.toContain('PRIVATE_PROVIDER_ERROR');
   });
   it('rejects changed data, a resealed impossible summary and a different valid plan', () => {
@@ -147,7 +181,13 @@ describe('read-only adaptive inspection CLI', () => {
     const names = await readdir(directory), before = await readFile(join(directory, 'result.json'), 'utf8');
     for (const resultPath of ['result.json', 'stopped.json']) {
       const result = await run(['--plan', 'plan.json', '--result', resultPath]); guarded(result); expect(result.code, result.stderr).toBe(0);
-      expect(JSON.parse(result.stdout)).toMatchObject({ valid: true, executionStatus: resultPath === 'result.json' ? 'completed' : 'stopped' });
+      const actual = JSON.parse(result.stdout);
+      expect(actual).toMatchObject({ kind: 'adaptive_inspection_summary', schemaVersion: 1, valid: true,
+        executionStatus: resultPath === 'result.json' ? 'completed' : 'stopped' });
+      const saved = resultPath === 'result.json' ? completed : stopped;
+      const inspected = inspectSurrogateText(text(saved.plan), text(saved.result));
+      expect(inspected.valid).toBe(true); if (!inspected.valid) return;
+      expect(actual).toEqual(inspected.summary);
       expect(result.stdout).not.toMatch(/PRIVATE_|private-reference/);
     }
     expect(await readdir(directory)).toEqual(names); expect(await readFile(join(directory, 'result.json'), 'utf8')).toBe(before);

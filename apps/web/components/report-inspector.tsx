@@ -61,7 +61,7 @@ export function ReportInspector() {
         <div className="reports-boundary-note"><span className="reports-corner" aria-hidden="true">+</span><p className="micro-label">BROWSER BOUNDARY</p><strong>Your file stays here.</strong><p>Choose a saved benchmark report. This page reads and hashes it in this browser. It sends no file or metrics to a server.</p><span className="reports-local-line"><span className="signal-dot" />NO UPLOAD / NO INFERENCE</span></div>
       </section>
       <section className="report-file-panel panel" aria-labelledby="report-file-title">
-        <div><p className="eyebrow">01 / SELECT LOCAL EVIDENCE</p><h2 id="report-file-title">Open a report.json</h2><p id="report-file-help">Benchmark schema version 1 · JSON · maximum 4 MiB. No report or performance data is loaded by default.</p></div>
+        <div><p className="eyebrow">01 / SELECT LOCAL EVIDENCE</p><h2 id="report-file-title">Open a report.json</h2><p id="report-file-help">Benchmark schema version 1 · JSON · maximum 4 MiB. No report or performance data is loaded by default.</p><p className="adaptive-file-help"><a href="/reports/adaptive">Inspect an adaptive discovery summary ↗</a></p></div>
         <div className="report-file-actions"><label htmlFor="report-file">Choose report JSON</label><input ref={fileInput} id="report-file" type="file" accept=".json,application/json" aria-describedby="report-file-help" onChange={event => { void selectFile(event.target.files?.[0]); }} /><button className="button button-quiet" type="button" onClick={clear} disabled={!fileName && !reading}>Clear report</button></div>
       </section>
       <div className="report-read-status" aria-live="polite" aria-atomic="true">

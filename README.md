@@ -16,6 +16,10 @@ Open http://127.0.0.1:3000. Choose a scripted scenario and executor mode, inspec
 
 Open `/reports` to inspect a saved benchmark `report.json`. Choose the file manually; it stays in your browser. The inspector checks its report hash and basic summary consistency, then shows declared coverage, errors, availability, utility, latency and partial token estimates. It does not verify attempt entries, provider provenance or billing. A matching hash alone does not establish that the supplied metrics are true.
 
+Open `/reports/adaptive` for compact discovery summaries exported by `inspect:surrogate`. It shows root branches, screen/refinement events, finite error codes, selection, reserved versus invoked budgets, usage and partial costs. Files stay in the browser. Its summary hash and consistency checks do not recheck the original plan/result. Export a fresh versioned summary with `pnpm --silent inspect:surrogate --plan PATH/plan.json --result PATH/result.json > adaptive-summary.json`.
+
+HEIST is being developed for [SERV Hackathon 02](https://www.openserv.ai/hackathon-2), November 2–15, 2026. See the [submission scope and current status](HACKATHON.md). This repository contains the working foundation; deployed payments, a measured Defense Curve and the hosted audit product remain planned work.
+
 ## Run the foundation
 
 Requirements: Node.js 22+ and pnpm 11.1.2.
@@ -48,7 +52,7 @@ The offline rehearsal writes 100 scripted attempts across paired observe/enforce
 
 The engine also provides [bounded corpus preparation](apps/engine/GENERATION.md): fixed generation slots, shared call and output reservations, cross-response deduplication and seeded local mutations. Preview makes no provider calls. A separately authorized run returns a frozen corpus only when it reaches the requested count; failures and related variants remain explicit. Saved runs can be checked with the [benchmark verifier](apps/engine/BENCHMARK_RECORD.md).
 
-[Surrogate search](apps/engine/SURROGATE_SEARCH.md) screens owned-fixture seeds and refines unsuccessful candidates using deterministic outcome feedback. It requires explicitly supplied model clients and finite budgets; preview makes no calls. Results preserve ancestry, reservations, errors and selection evidence for local verification. Scripted tests establish the workflow. A separate four-task hosted Dolphin check demonstrated native tool round trips and owned browse/inbox reads; adaptive discoveries, transfer to SERV and a diverse measured corpus remain unverified.
+[Surrogate search](apps/engine/SURROGATE_SEARCH.md) screens owned-fixture seeds and refines unsuccessful candidates using deterministic outcome feedback. It requires explicitly supplied model clients and finite budgets; preview makes no calls. Results preserve ancestry, reservations, errors and selection evidence for local verification. Scripted tests establish the workflow. Hosted Dolphin checks demonstrated selected native tool round trips and owned browse/inbox reads. A later bounded discovery accepted four refinements and stopped on a screen's four-round limit, with no eligible candidate or corpus; its conditional SERV stage was skipped. This establishes selected response compatibility, not successful discovery, transfer to SERV or a measured defense benefit.
 
 Inspect a saved adaptive plan and result offline with `pnpm inspect:surrogate --plan PATH/plan.json --result PATH/result.json`. The command runs the full adaptive verifier and prints branch states, retained errors, selection, budgets and partial usage/cost coverage. It accepts verified stopped runs, writes no files and makes no provider requests. This is local consistency verification; source provenance, billing and transfer to SERV remain unverified. See the [saved-evidence limits](apps/engine/SURROGATE_SEARCH.md#inspect-saved-adaptive-evidence-locally).
 

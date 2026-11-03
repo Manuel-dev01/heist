@@ -1,3 +1,4 @@
+import { hashCanonical } from '@heist/harness';
 import { parseSurrogatePlan, verifySurrogateResult, type SurrogateResult } from './surrogate-search.js';
 
 export const MAX_SURROGATE_PLAN_FILE_BYTES = 8 * 1024 * 1024;
@@ -20,6 +21,7 @@ export function inspectSurrogateText(planText: string, resultText: string) {
     // the complete result schema, hash, plan binding and deterministic evidence.
     const result = resultInput as SurrogateResult;
     const summary = {
+      kind: 'adaptive_inspection_summary' as const,
       schemaVersion: 1 as const, valid: true as const,
       verification: { scope: 'local_internal_consistency' as const, entriesChecked: verified.entriesChecked },
       planId: plan.id, planHash: plan.planHash, resultHash: result.resultHash, seedCorpusHash: result.seedCorpusHash,
@@ -39,7 +41,7 @@ export function inspectSurrogateText(planText: string, resultText: string) {
         currentHash: branch.currentHash, round: branch.round, state: branch.state })),
       events: result.events.map(entry => entry.kind === 'screen'
         ? { kind: entry.kind, slotId: entry.slotId, rootHash: entry.rootHash, candidateHash: entry.candidateHash,
-          round: entry.round, outcome: entry.record.outcome, goalAchieved: entry.feedback.goalAchieved,
+          round: entry.round, outcome: entry.record.outcome, errorCode: entry.record.error?.code ?? null, goalAchieved: entry.feedback.goalAchieved,
           utilitySuccess: entry.record.oracle.utilitySuccess, valueLostUnits: entry.record.oracle.valueLostUnits, callback: entry.callback }
         : { kind: entry.kind, slotId: entry.slotId, rootHash: entry.rootHash, parentHash: entry.parentHash,
           round: entry.round, status: entry.status, childHash: entry.childHash, callback: entry.callback }),
@@ -52,7 +54,7 @@ export function inspectSurrogateText(planText: string, resultText: string) {
         'Only synthetic funds were executed. No SERV transfer, defense benefit or real-money effectiveness is established.',
       ],
     };
-    return { valid: true, summary } as const;
+    return { valid: true, summary: { ...summary, summaryHash: hashCanonical(summary) } } as const;
   } catch { return { valid: false, reason: 'invalid_evidence' } as const; }
 }
 export type SurrogateInspection = ReturnType<typeof inspectSurrogateText>;
