@@ -544,3 +544,71 @@ describe('saved adaptive result verification', () => {
     expect(verifySurrogateResult({ plan: smaller, result: reseal(continued) }).valid).toBe(false);
   });
 });
+
+describe('explicit expanded refinement limits', () => {
+  function expanded(patch: Partial<CreateSurrogatePlanInput['limits']> = {}) {
+    const base = input();
+    return createSurrogatePlan({ ...base, refinement: { ...base.refinement, maxRefinementsPerSeed: 1, maxOutputTokens: 8192, timeoutMs: 120000 },
+      limits: { ...base.limits, maxModelCalls: 9, maxTotalOutputTokens: 9216, maxWallTimeMs: 180000, ...patch } });
+  }
+  it('executes an explicitly budgeted 8192-token refiner with unchanged screening and verifies all evidence', async () => {
+    const p = expanded(), victim = scripted([payment(), final(), payment(true), final()]), response = refinement();
+    response.usage = { inputTokens: 10, outputTokens: 8192 }; response.costEstimateUsd = 0.001;
+    const attacker = scripted([response]);
+    expect(previewSurrogatePlan(p)).toMatchObject({ maximumClientInvocations: 9, maximumOutputTokensReserved: 9216 });
+    const result = await runSurrogateSearch({ plan: p, attackerClient: attacker.client, surrogateClient: victim.client, allowInference: true });
+    expect(result).toMatchObject({ executionStatus: 'completed', selectionStatus: 'frozen', counts: { screens: 2, refinements: 1, selectedCandidates: 1 },
+      budget: { callsReserved: 9, outputTokensReserved: 9216, clientInvocations: 5 }, usage: { outputTokensKnownSubtotal: '8212' } });
+    expect(attacker.requests[0]).toMatchObject({ tools: [], maxOutputTokens: 8192 });
+    expect(victim.requests.every(request => request.maxOutputTokens === 128)).toBe(true);
+    expect(result.events[1]).toMatchObject({ kind: 'refinement', status: 'refined', observations: [{ outputAllowance: 8192, usage: { outputTokens: 8192 } }] });
+    verify(p, result);
+    const altered = structuredClone(result); altered.events[1]!.observations[0]!.outputAllowance = 8191;
+    expect(verifySurrogateResult({ plan: p, result: reseal(altered) }).valid).toBe(false);
+  });
+  it.each(['output', 'timeout', 'screen_output', 'screen_timeout', 'callback'] as const)('rejects unsupported %s settings without widening other roles', target => {
+    const base = input();
+    expect(() => createSurrogatePlan({ ...base,
+      refinement: { ...base.refinement, maxOutputTokens: target === 'output' ? 8193 : 8192, timeoutMs: target === 'timeout' ? 120001 : 120000 },
+      screen: { ...base.screen, maxOutputTokens: target === 'screen_output' ? 2049 : 128, maxModelLatencyMs: target === 'screen_timeout' ? 60001 : 1000 },
+      limits: { ...base.limits, callbackTimeoutMs: target === 'callback' ? 60001 : 1000 },
+    })).toThrow();
+  });
+  it('reserves the complete 8192-token refine/child-screen pair or dispatches neither when one token short', async () => {
+    const p = expanded({ maxTotalOutputTokens: 9215 }), attacker = scripted([]), victim = scripted([payment(), final()]);
+    const result = await runSurrogateSearch({ plan: p, attackerClient: attacker.client, surrogateClient: victim.client, allowInference: true });
+    expect(result).toMatchObject({ executionStatus: 'stopped', stopReason: 'output_token_limit', counts: { screens: 1, refinements: 0 },
+      budget: { callsReserved: 4, outputTokensReserved: 512, clientInvocations: 2 } });
+    expect(attacker.complete).not.toHaveBeenCalled(); expect(result.corpus).toBeNull(); verify(p, result);
+  });
+  it('retains refiner output overshoot usage and the whole unused child reservation without screening it', async () => {
+    const p = expanded(), response = refinement(); response.usage = { inputTokens: 10, outputTokens: 8193 };
+    const attacker = scripted([response]), victim = scripted([payment(), final()]);
+    const result = await runSurrogateSearch({ plan: p, attackerClient: attacker.client, surrogateClient: victim.client, allowInference: true });
+    expect(result).toMatchObject({ executionStatus: 'stopped', stopReason: 'reported_output_limit', counts: { screens: 1, refinements: 1 },
+      budget: { callsReserved: 9, outputTokensReserved: 9216, clientInvocations: 3 }, usage: { outputTokensKnownSubtotal: '8203' } });
+    expect(result.events[1]!.observations[0]).toMatchObject({ outputAllowance: 8192, error: 'output_overshoot', usage: { outputTokens: 8193 } });
+    expect(victim.complete).toHaveBeenCalledTimes(2); expect(result.corpus).toBeNull(); verify(p, result);
+  });
+  it('completes an 85-second refiner inside its explicit 120-second role deadline when the global wall allows it', async () => {
+    vi.useFakeTimers(); const p = expanded(), victim = scripted([payment(), final(), payment(true), final()]);
+    const attacker = scripted([() => new Promise<ModelResponse>(resolve => setTimeout(() => resolve(refinement()), 85000))]);
+    const pending = runSurrogateSearch({ plan: p, attackerClient: attacker.client, surrogateClient: victim.client, allowInference: true });
+    await vi.advanceTimersByTimeAsync(85001); const result = await pending;
+    expect(result.executionStatus).toBe('completed'); expect(result.selectionStatus).toBe('frozen'); verify(p, result);
+  });
+  it.each(['role_deadline', 'global_wall', 'abort'] as const)('stops an expanded refiner on %s and freezes accounting before a late response', async target => {
+    vi.useFakeTimers(); let resolveLate: ((value: ModelResponse) => void) | undefined;
+    const p = expanded(target === 'global_wall' ? { maxWallTimeMs: 70000 } : {}), victim = scripted([payment(), final()]), control = new AbortController();
+    const attacker = scripted([() => new Promise<ModelResponse>(resolve => { resolveLate = resolve; })]);
+    const pending = runSurrogateSearch({ plan: p, attackerClient: attacker.client, surrogateClient: victim.client, signal: control.signal, allowInference: true });
+    await vi.advanceTimersByTimeAsync(1); expect(resolveLate).toBeTypeOf('function');
+    if (target === 'abort') control.abort(); else await vi.advanceTimersByTimeAsync(target === 'global_wall' ? 70000 : 120000);
+    const result = await pending, before = structuredClone(result);
+    expect(result).toMatchObject({ executionStatus: 'stopped', stopReason: target === 'abort' ? 'aborted' : target === 'global_wall' ? 'wall_deadline' : 'client_timeout',
+      budget: { callsReserved: 9, outputTokensReserved: 9216, clientInvocations: 3 }, usage: { unobservedCalls: 1 } });
+    expect(result.corpus).toBeNull(); verify(p, result);
+    resolveLate!(refinement()); await vi.advanceTimersByTimeAsync(1);
+    expect(result).toEqual(before); expect(victim.complete).toHaveBeenCalledTimes(2); expect(attacker.complete).toHaveBeenCalledOnce(); verify(p, result);
+  });
+});

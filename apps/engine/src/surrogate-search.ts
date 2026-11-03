@@ -30,8 +30,8 @@ const ScreenSettings = z.object({
 }).strict();
 const RefinementSettings = z.object({
   maxRefinementsPerSeed: z.number().int().min(0).max(3),
-  maxOutputTokens: z.number().int().min(1).max(4096),
-  timeoutMs: z.number().int().min(10).max(60_000),
+  maxOutputTokens: z.number().int().min(1).max(8192),
+  timeoutMs: z.number().int().min(10).max(120_000),
   maxPayloadBytes: z.number().int().min(16).max(4096),
 }).strict();
 export const SurrogateLimitsSchema = z.object({

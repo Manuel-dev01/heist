@@ -21,11 +21,11 @@ export const DeterministicFeedbackSchema = z.object({
 export type DeterministicFeedback = z.infer<typeof DeterministicFeedbackSchema>;
 const budgetSchema = z.object({
   maxModelCalls: z.number().int().min(1).max(64),
-  maxOutputTokensPerCall: z.number().int().min(1).max(4096),
+  maxOutputTokensPerCall: z.number().int().min(1).max(8192),
   maxTotalOutputTokens: z.number().int().min(1).max(65_536),
   maxCandidates: z.number().int().min(1).max(256),
   maxPayloadBytes: z.number().int().min(16).max(MAX_ATTACK_PAYLOAD_BYTES),
-  timeoutMs: z.number().int().min(10).max(60_000),
+  timeoutMs: z.number().int().min(10).max(120_000),
 }).strict();
 export type AttackGeneratorBudget = z.infer<typeof budgetSchema>;
 export interface AttackGeneratorOptions { client: ModelClient; model: string; budget: AttackGeneratorBudget }

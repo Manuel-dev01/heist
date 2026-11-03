@@ -408,3 +408,48 @@ describe("forwarded identifier privacy and parent bounds", () => {
     expect(instance.getBudgetState().callsReserved).toBe(0);
   });
 });
+
+describe('explicit expanded attacker response limits', () => {
+  it.each(['generate', 'refine'] as const)('accepts an explicitly budgeted 8192-token %s and keeps its whole reservation', async operation => {
+    const { generator: instance, requests } = generator([completion(envelope(candidate('A different owned synthetic candidate.')), {
+      usage: { inputTokens: 20, outputTokens: 8192 }, costEstimateUsd: 0.001,
+    })], { maxModelCalls: 2, maxOutputTokensPerCall: 8192, maxTotalOutputTokens: 8192, timeoutMs: 120000 });
+    const result = operation === 'generate' ? await instance.generate(generateInput) : await instance.refine({ context, attack: seed(), feedback });
+    expect(result).toMatchObject({ status: 'ok', completion: { usage: { outputTokens: 8192 } }, budget: { callsReserved: 1, outputTokensReserved: 8192 } });
+    expect(requests[0]?.maxOutputTokens).toBe(8192);
+    expect(await instance.generate(generateInput)).toMatchObject({ status: 'budget_exhausted' });
+    expect(requests).toHaveLength(1);
+  });
+  it.each([{ maxOutputTokensPerCall: 8193 }, { timeoutMs: 120001 }, { maxTotalOutputTokens: 65537 }])('rejects settings beyond the expanded ceiling before dispatch: %j', patch => {
+    const complete = vi.fn();
+    expect(() => createAttackGenerator({ client: { complete }, model, budget: { ...budget, ...patch } })).toThrow();
+    expect(complete).not.toHaveBeenCalled();
+  });
+  it('rejects 8193 observed output tokens under an 8192 allowance without refunding or accepting candidates', async () => {
+    const { generator: instance, requests } = generator([completion(envelope(candidate()), { usage: { inputTokens: 1, outputTokens: 8193 } })],
+      { maxOutputTokensPerCall: 8192, maxTotalOutputTokens: 8192, timeoutMs: 120000 });
+    expect(await instance.refine({ context, attack: seed(), feedback })).toMatchObject({ status: 'invalid', stage: 'response', reason: 'response_limit' });
+    expect(instance.getBudgetState()).toMatchObject({ callsReserved: 1, outputTokensReserved: 8192 }); expect(requests).toHaveLength(1);
+  });
+  it('permits an explicit 120-second wait beyond the old ceiling using fake timers', async () => {
+    vi.useFakeTimers();
+    const complete = vi.fn(() => new Promise<ModelResponse>(resolve => setTimeout(() => resolve(completion(envelope(candidate()), {
+      usage: { inputTokens: 10, outputTokens: 6725 },
+    })), 85000)));
+    const instance = createAttackGenerator({ client: { complete }, model, budget: { ...budget, maxOutputTokensPerCall: 8192, maxTotalOutputTokens: 8192, timeoutMs: 120000 } });
+    const pending = instance.generate(generateInput); await vi.advanceTimersByTimeAsync(85001);
+    expect(await pending).toMatchObject({ status: 'ok', completion: { usage: { outputTokens: 6725 } } }); expect(complete).toHaveBeenCalledOnce();
+  });
+  it('times out at 120 seconds, keeps its reservation and never dedupes from a late completion', async () => {
+    vi.useFakeTimers(); let resolveLate: ((response: ModelResponse) => void) | undefined;
+    const reply = completion(envelope(candidate('A new candidate after the timeout.')));
+    const complete = vi.fn().mockImplementationOnce(() => new Promise<ModelResponse>(resolve => { resolveLate = resolve; })).mockResolvedValueOnce(reply);
+    const instance = createAttackGenerator({ client: { complete }, model,
+      budget: { ...budget, maxOutputTokensPerCall: 8192, maxTotalOutputTokens: 16384, timeoutMs: 120000 } });
+    const pending = instance.refine({ context, attack: seed(), feedback }); await vi.advanceTimersByTimeAsync(120001);
+    expect(await pending).toMatchObject({ status: 'provider_error', reason: 'timeout', budget: { callsReserved: 1, outputTokensReserved: 8192 } });
+    resolveLate!(reply); await Promise.resolve(); await Promise.resolve();
+    expect(await instance.refine({ context, attack: seed(), feedback })).toMatchObject({ status: 'ok', duplicates: 0, candidates: [expect.objectContaining({ origin: 'refined' })],
+      budget: { callsReserved: 2, outputTokensReserved: 16384 } }); expect(complete).toHaveBeenCalledTimes(2);
+  });
+});
