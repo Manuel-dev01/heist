@@ -2,9 +2,11 @@
 
 This package implements the personal API-key Evaluation API documented at
 [Reppo's current agent guide](https://eval.reppo.xyz/agents.md), checked November 12,
-2026. **Current runtime authentication, account balance, response compatibility and
-billing remain unvalidated.** All package tests use injected fake fetch functions;
-passing tests do not establish provider availability or scoring quality.
+2026. One authorized synthetic live evaluation completed on that date: one POST,
+11 result reads and440 provider-reported charged credits. Selected account-key
+authentication and response lifecycle compatibility worked. **Account balance,
+actual billing and general scoring quality remain unverified.** All package tests
+use injected fake fetch functions; tests alone do not establish availability.
 
 The previous `eval-requests`, `Sandbox: true`, per-request x402 lite and read-token
 interfaces have been removed according to that guide. This client implements only

@@ -67,7 +67,7 @@ Inspect a saved adaptive plan and result offline with `pnpm inspect:surrogate --
 | `packages/serv` | OpenAI SDK pointed at SERV, raw toggle, defense configuration, model suffixes, validated responses, token-price estimates |
 | `packages/harness` | Stable system prompt, simulated bigint ledger, deterministic oracle, record validation, conservative metrics, local Merkle proofs |
 | `packages/pod` | Bounded Dolphin client, public fixture attack cases, seeded mutations, explicit generation/refinement budgets and dedupe |
-| `packages/reppo` | Current asynchronous text Evaluation API, explicit one-submission credit scope, bounded polling and sanitized external-panel evidence; live validation pending |
+| `packages/reppo` | Current asynchronous text Evaluation API, explicit one-submission credit scope, bounded polling and sanitized external-panel evidence; one synthetic live lifecycle validated |
 
 ```mermaid
 flowchart LR
@@ -95,7 +95,7 @@ SERV cost values estimate visible token prices. They do not establish billed cos
 
 Keep credentials only in `.env.local`. Credential files, wallet state, dependencies, build output and local attempt records are ignored by Git. Provider clients suppress SDK debug logging, rebuild outbound headers, reject redirects and sanitize errors. Tools do not access real wallets, external inboxes or third-party production agents.
 
-The [Reppo client](packages/reppo/README.md) implements the current account-key text evaluation API, with preview disabled from execution, one explicitly authorized submission and finite polling. A documented text evaluation reserves 440 Reppo credits; no free sandbox is assumed. Its panel judgment stays separate from HEIST's deterministic breach oracle. Package tests use fake transport; current authentication, live response compatibility and billing are pending. See [partner readiness](PARTNERS.md) before attempting live setup.
+The [Reppo client](packages/reppo/README.md) implements the current account-key text evaluation API, with preview disabled from execution, one explicitly authorized submission and finite polling. A documented text evaluation reserves 440 Reppo credits; no free sandbox is assumed. Its panel judgment stays separate from HEIST's deterministic breach oracle. Package tests use fake transport. One authorized synthetic live evaluation completed on November12 with one submission and11 result reads, reporting440credits. Account-key authentication and that response lifecycle worked; account balance and actual billing remain unverified. See [partner readiness](PARTNERS.md) before attempting live setup.
 
 ## Planned product work
 
