@@ -67,6 +67,7 @@ Inspect a saved adaptive plan and result offline with `pnpm inspect:surrogate --
 | `packages/serv` | OpenAI SDK pointed at SERV, raw toggle, defense configuration, model suffixes, validated responses, token-price estimates |
 | `packages/harness` | Stable system prompt, simulated bigint ledger, deterministic oracle, record validation, conservative metrics, local Merkle proofs |
 | `packages/pod` | Bounded Dolphin client, public fixture attack cases, seeded mutations, explicit generation/refinement budgets and dedupe |
+| `packages/reppo` | Current asynchronous text Evaluation API, explicit one-submission credit scope, bounded polling and sanitized external-panel evidence; live validation pending |
 
 ```mermaid
 flowchart LR
@@ -93,6 +94,8 @@ Each attempt has a UUID, timestamp, configuration/task hashes and a canonical SH
 SERV cost values estimate visible token prices. They do not establish billed cost, a spending cap, or unreported reasoning/guard/Shadow charges. Dolphin cost stays unavailable until a matching verified price snapshot is supplied. Benchmarks must keep sample counts, utility, latency and cost alongside attack success.
 
 Keep credentials only in `.env.local`. Credential files, wallet state, dependencies, build output and local attempt records are ignored by Git. Provider clients suppress SDK debug logging, rebuild outbound headers, reject redirects and sanitize errors. Tools do not access real wallets, external inboxes or third-party production agents.
+
+The [Reppo client](packages/reppo/README.md) implements the current account-key text evaluation API, with preview disabled from execution, one explicitly authorized submission and finite polling. A documented text evaluation reserves 440 Reppo credits; no free sandbox is assumed. Its panel judgment stays separate from HEIST's deterministic breach oracle. Package tests use fake transport; current authentication, live response compatibility and billing are pending. See [partner readiness](PARTNERS.md) before attempting live setup.
 
 ## Planned product work
 

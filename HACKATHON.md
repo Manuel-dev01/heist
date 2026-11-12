@@ -21,7 +21,7 @@ HEIST tests wallet-agent decisions in owned synthetic payment fixtures, with det
 
 The repository includes groundwork developed before kickoff. During the hackathon, development has added saved adaptive evidence inspection, explicit larger refiner response budgets and a browser view of compact discovery summaries. The final write-up must distinguish this work from earlier groundwork and report only completed validations.
 
-The intended Kite payment flow and Reppo evaluation/data-market integrations are not implemented or deployed. Track entry remains to be finalized against the demonstrated integration. A measured live defense comparison, production persistence, hosted audit workflow and real-money settlement are not claimed by this repository.
+The intended Kite payment flow and Reppo data-market integration are not implemented or deployed. A current Reppo text-evaluation client is implemented with offline tests; live account authentication and evaluation remain pending. Track entry remains to be finalized against the demonstrated integration. A measured live defense comparison, production persistence, hosted audit workflow and real-money settlement are not claimed by this repository. See [partner readiness](PARTNERS.md) for current API changes and unresolved network prerequisites.
 
 ## Completion checklist
 
