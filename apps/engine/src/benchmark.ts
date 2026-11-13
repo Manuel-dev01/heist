@@ -29,6 +29,12 @@ export const BenchmarkLimitsSchema = z.object({
   maxWallTimeMs: z.number().int().min(10).max(43200000),
   maxEvidenceBytes: z.number().int().min(1024).max(268435456),
   maxConsecutiveErrors: z.number().int().min(1).max(1000).optional(),
+  // Optional stop after this many errored attempts in total (consecutive or not).
+  maxTotalErrors: z.number().int().min(1).max(1000).optional(),
+  // Optional single retry of a model call that produced no HTTP response (SDK timeout or
+  // connection failure, status null). HTTP statuses are never retried. Retries use the
+  // attempt's existing reserved call/output slots and are capped per run.
+  noResponseRetry: z.object({ maxRetries: z.number().int().min(1).max(1000), perTryTimeoutMs: z.number().int().min(1001).max(60000) }).strict().optional(),
 }).strict();
 const PlanContent = z.object({
   schemaVersion: z.literal(1), id, source: z.enum(['scripted_fixture', 'live_inference']),
@@ -48,6 +54,7 @@ const PlanShape = PlanContent.extend({ planHash: digest }).superRefine((plan, ct
     const provider = Provider.safeParse(arm.config.providerConfig);
     if (provider.success && provider.data.provider !== (plan.source === 'scripted_fixture' ? 'fixture' : 'serv')) ctx.addIssue({ code: 'custom', message: 'Provider/source mismatch.' });
     if (plan.source === 'live_inference' && arm.config.maxModelLatencyMs < 1001) ctx.addIssue({ code: 'custom', message: 'Live latency must allow the SERV minimum transport timeout.' });
+    if (plan.limits.noResponseRetry && arm.config.maxModelLatencyMs <= plan.limits.noResponseRetry.perTryTimeoutMs) ctx.addIssue({ code: 'custom', message: 'Call latency must exceed the per-try timeout when retries are enabled.' });
     if (plan.source === 'scripted_fixture' && arm.config.model !== 'fixture-model') ctx.addIssue({ code: 'custom', message: 'Scripted source requires fixture model.' });
   }
   try { parseBenchmarkCorpus(plan.corpus); } catch { ctx.addIssue({ code: 'custom', message: 'Corpus derivation invalid.' }); }
@@ -157,7 +164,7 @@ export function createBenchmarkEntryMetadata(plan: BenchmarkPlan, arm: Benchmark
     independence: 'not_attested',
   });
 }
-export type BenchmarkStopReason = 'attempt_limit' | 'model_call_limit' | 'output_token_limit' | 'request_byte_limit' | 'wall_deadline' | 'aborted' | 'evidence_limit' | 'persistence_error' | 'reported_output_limit' | 'provider_unavailable' | 'consecutive_error_limit';
+export type BenchmarkStopReason = 'attempt_limit' | 'model_call_limit' | 'output_token_limit' | 'request_byte_limit' | 'wall_deadline' | 'aborted' | 'evidence_limit' | 'persistence_error' | 'reported_output_limit' | 'provider_unavailable' | 'consecutive_error_limit' | 'total_error_limit';
 class AdmissionError extends Error {}
 function containsLiteral(value: unknown, literal: string): boolean {
   if (typeof value === 'string') return value.includes(literal);
@@ -180,8 +187,12 @@ export async function runBenchmark(input: {
   const startedAt = new Date().toISOString(), start = performance.now(), deadline = start + plan.limits.maxWallTimeMs;
   let stopReason: BenchmarkStopReason | null = null;
   let finalized = false;
-  let consecutiveErrors = 0;
-  const budget = { attemptsReserved: 0, attemptsStarted: 0, modelCallsReserved: 0, modelCallsDispatched: 0, outputTokensReserved: 0, requestBytesReserved: 0, evidenceBytesRetained: 0, reportedOverCapResponses: 0 };
+  let consecutiveErrors = 0, totalErrors = 0;
+  const retryPolicy = plan.limits.noResponseRetry;
+  const budget: { attemptsReserved: number; attemptsStarted: number; modelCallsReserved: number; modelCallsDispatched: number; outputTokensReserved: number;
+    requestBytesReserved: number; evidenceBytesRetained: number; reportedOverCapResponses: number; noResponseRetries?: number } = {
+    attemptsReserved: 0, attemptsStarted: 0, modelCallsReserved: 0, modelCallsDispatched: 0, outputTokensReserved: 0, requestBytesReserved: 0,
+    evidenceBytesRetained: 0, reportedOverCapResponses: 0, ...(retryPolicy ? { noResponseRetries: 0 } : {}) };
   let reportedInput = 0n, reportedOutput = 0n, usageResponses = 0, missingUsageResponses = 0;
   const entries: BenchmarkEntry[] = [];
   const stopped = () => {
@@ -203,9 +214,11 @@ export async function runBenchmark(input: {
       budget.attemptsStarted += 1;
       const fixture = plan.source === 'scripted_fixture' ? scriptedClient(block.item) : null;
       const features = Provider.parse(arm.config.providerConfig).features as ServFeatures;
-      let attemptOpen = true;
+      let attemptOpen = true, attemptDispatches = 0;
       const client: ModelClient = { async complete(request: ModelRequest) {
         if (finalized || !attemptOpen || stopped()) throw new AdmissionError();
+        // Only reachable after a retry: dispatches never exceed the attempt's reserved rounds.
+        if (attemptDispatches >= arm.config.maxRounds) throw new AdmissionError();
         const body = fixture ? request : buildServRequest(request, features).body;
         const bytes = Buffer.byteLength(JSON.stringify(body), 'utf8');
         if (bytes > plan.limits.maxRequestBytes || budget.requestBytesReserved + bytes > plan.limits.maxTotalRequestBytes) {
@@ -213,18 +226,29 @@ export async function runBenchmark(input: {
         }
         const remaining = deadline - performance.now();
         if (remaining < (fixture ? 10 : 1001)) { stopReason = 'wall_deadline'; throw new AdmissionError(); }
-        // Construct and validate the live adapter before counting an admitted model invocation.
-        const backend = fixture ?? createServClient({ apiKey: input.authorization!.apiKey!, inferenceEnabled: true, features,
-          timeoutMs: Math.floor(Math.min(arm.config.maxModelLatencyMs, remaining) - 1) });
-        budget.requestBytesReserved += bytes; budget.modelCallsDispatched += 1;
+        const callStart = performance.now();
+        const tryTimeout = (now: number) => Math.floor(Math.min(retryPolicy!.perTryTimeoutMs, arm.config.maxModelLatencyMs - (now - callStart), deadline - now) - 1);
         let response;
-        try { response = await backend.complete(request); }
-        catch (error) {
-          if (attemptOpen && !finalized) {
-            missingUsageResponses += 1;
-            if (error && typeof error === 'object' && 'status' in error && typeof error.status === 'number' && [401, 402, 403, 429].includes(error.status)) stopReason = 'provider_unavailable';
+        let retried = false;
+        for (;;) {
+          // Construct and validate the live adapter before counting an admitted model invocation.
+          const backend = fixture ?? createServClient({ apiKey: input.authorization!.apiKey!, inferenceEnabled: true, features,
+            timeoutMs: retryPolicy ? tryTimeout(performance.now()) : Math.floor(Math.min(arm.config.maxModelLatencyMs, remaining) - 1) });
+          budget.requestBytesReserved += bytes; budget.modelCallsDispatched += 1; attemptDispatches += 1;
+          try { response = await backend.complete(request); break; }
+          catch (error) {
+            if (attemptOpen && !finalized) {
+              missingUsageResponses += 1;
+              if (error && typeof error === 'object' && 'status' in error && typeof error.status === 'number' && [401, 402, 403, 429].includes(error.status)) stopReason = 'provider_unavailable';
+              const noResponse = !!error && typeof error === 'object' && 'status' in error && error.status === null &&
+                'type' in error && (error.type === 'timeout' || error.type === 'connection_error');
+              if (retryPolicy && noResponse && !retried && budget.noResponseRetries! < retryPolicy.maxRetries && attemptDispatches < arm.config.maxRounds &&
+                !stopped() && budget.requestBytesReserved + bytes <= plan.limits.maxTotalRequestBytes && tryTimeout(performance.now()) >= 1000) {
+                retried = true; budget.noResponseRetries! += 1; continue;
+              }
+            }
+            throw new AdmissionError();
           }
-          throw new AdmissionError();
         }
         // Harness deadlines may settle before a provider promise. Late responses cannot rewrite retained evidence.
         if (!attemptOpen || finalized) throw new AdmissionError();
@@ -245,6 +269,7 @@ export async function runBenchmark(input: {
         metadata: createBenchmarkEntryMetadata(plan, arm, block.item, block.trialId) };
       entries.push(entry); budget.evidenceBytesRetained += Buffer.byteLength(JSON.stringify(entry), 'utf8');
       consecutiveErrors = record.outcome === 'error' ? consecutiveErrors + 1 : 0;
+      if (record.outcome === 'error') totalErrors += 1;
       // Preserve the last bounded record even when it crosses the soft evidence admission threshold.
       if (budget.evidenceBytesRetained > plan.limits.maxEvidenceBytes) stopReason = 'evidence_limit';
       if (input.onEntry) {
@@ -256,6 +281,9 @@ export async function runBenchmark(input: {
       if (stopped()) break;
       if (plan.limits.maxConsecutiveErrors !== undefined && consecutiveErrors >= plan.limits.maxConsecutiveErrors) {
         stopReason = 'consecutive_error_limit'; break;
+      }
+      if (plan.limits.maxTotalErrors !== undefined && totalErrors >= plan.limits.maxTotalErrors) {
+        stopReason = 'total_error_limit'; break;
       }
     }
     if (stopped()) break;

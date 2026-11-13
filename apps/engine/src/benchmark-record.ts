@@ -14,7 +14,7 @@ const EntrySchema = z.object({
   record: z.unknown(), metadata: MetricEntryMetadataSchema,
 }).strict();
 const StopReasonSchema = z.enum(['attempt_limit', 'model_call_limit', 'output_token_limit', 'request_byte_limit',
-  'wall_deadline', 'aborted', 'evidence_limit', 'persistence_error', 'reported_output_limit', 'provider_unavailable', 'consecutive_error_limit']);
+  'wall_deadline', 'aborted', 'evidence_limit', 'persistence_error', 'reported_output_limit', 'provider_unavailable', 'consecutive_error_limit', 'total_error_limit']);
 const ReportSchema = z.object({
   schemaVersion: z.literal(1), planId: identity, planHash: digest, corpusHash: digest,
   source: z.enum(['scripted_fixture', 'live_inference']), execution: z.literal('simulated'),
@@ -23,7 +23,7 @@ const ReportSchema = z.object({
   counts: z.object({ planned: count, started: count, completed: count, errors: count, skipped: count }).strict(),
   budget: z.object({ attemptsReserved: count, attemptsStarted: count, modelCallsReserved: count,
     modelCallsDispatched: count, outputTokensReserved: count, requestBytesReserved: count,
-    evidenceBytesRetained: count, reportedOverCapResponses: count }).strict(),
+    evidenceBytesRetained: count, reportedOverCapResponses: count, noResponseRetries: count.optional() }).strict(),
   reportedUsage: z.object({ knownResponses: count, unknownResponses: count,
     inputTokensKnownSubtotal: decimal.nullable(), outputTokensKnownSubtotal: decimal.nullable(),
     unobservedSettlements: count.optional(), missingUsageInvocations: count.optional() }).strict(),
@@ -89,9 +89,9 @@ export function verifyBenchmarkResult(input: { plan: unknown; report: unknown; e
     const metricInputs: { record: unknown; metadata: unknown }[] = [];
     let evidenceBytes = 0, previousEvidenceBytes = 0;
     let minimumCalls = 0, maximumCalls = 0;
-    let consecutiveErrors = 0, firstErrorThresholdIndex: number | null = null;
+    let consecutiveErrors = 0, firstErrorThresholdIndex: number | null = null, totalErrors = 0, totalErrorThresholdIndex: number | null = null;
     for (const [index, rawEntry] of input.entries.entries()) {
-      if (firstErrorThresholdIndex !== null) return fail('consecutive_error_limit_mismatch');
+      if (firstErrorThresholdIndex !== null || totalErrorThresholdIndex !== null) return fail('consecutive_error_limit_mismatch');
       const parsed = EntrySchema.safeParse(rawEntry);
       if (!parsed.success) return fail('invalid_entry');
       const entry = parsed.data;
@@ -120,9 +120,18 @@ export function verifyBenchmarkResult(input: { plan: unknown; report: unknown; e
       checkedEntries += 1;
       consecutiveErrors = record.outcome === 'error' ? consecutiveErrors + 1 : 0;
       if (plan.limits.maxConsecutiveErrors !== undefined && consecutiveErrors >= plan.limits.maxConsecutiveErrors) firstErrorThresholdIndex = index;
+      if (record.outcome === 'error') totalErrors += 1;
+      if (plan.limits.maxTotalErrors !== undefined && totalErrors >= plan.limits.maxTotalErrors) totalErrorThresholdIndex = index;
     }
     const specificErrorStops = new Set(['provider_unavailable', 'reported_output_limit', 'request_byte_limit',
       'evidence_limit', 'persistence_error', 'aborted', 'wall_deadline']);
+    // The engine checks the consecutive threshold first; a total-error stop requires it unmet.
+    if (report.stopReason === 'total_error_limit' &&
+      (plan.limits.maxTotalErrors === undefined || totalErrorThresholdIndex !== records.length - 1 || firstErrorThresholdIndex !== null)) return fail('total_error_limit_mismatch');
+    if (totalErrorThresholdIndex !== null && firstErrorThresholdIndex === null && (report.status !== 'stopped' ||
+      (report.stopReason !== 'total_error_limit' && !specificErrorStops.has(report.stopReason!)))) return fail('total_error_limit_mismatch');
+    const retryPolicy = plan.limits.noResponseRetry, retries = report.budget.noResponseRetries;
+    if ((retryPolicy === undefined) !== (retries === undefined) || (retryPolicy && retries! > retryPolicy.maxRetries)) return fail('budget_mismatch');
     if (report.stopReason === 'consecutive_error_limit' &&
       (plan.limits.maxConsecutiveErrors === undefined || firstErrorThresholdIndex !== records.length - 1)) return fail('consecutive_error_limit_mismatch');
     if (firstErrorThresholdIndex !== null && (report.status !== 'stopped' ||
@@ -151,7 +160,7 @@ export function verifyBenchmarkResult(input: { plan: unknown; report: unknown; e
       budget.attemptsReserved - records.length > armCount || budget.attemptsReserved > preview.plannedAttempts || budget.attemptsReserved > plan.limits.maxAttempts ||
       budget.modelCallsReserved !== reservedBlocks * callsPerBlock || budget.modelCallsReserved > plan.limits.maxModelCalls ||
       budget.outputTokensReserved !== reservedBlocks * outputPerBlock || budget.outputTokensReserved > plan.limits.maxTotalOutputTokens ||
-      budget.modelCallsDispatched > budget.modelCallsReserved || budget.modelCallsDispatched < minimumCalls || budget.modelCallsDispatched > maximumCalls ||
+      budget.modelCallsDispatched > budget.modelCallsReserved || budget.modelCallsDispatched < minimumCalls || budget.modelCallsDispatched > maximumCalls + (budget.noResponseRetries ?? 0) ||
       budget.requestBytesReserved > plan.limits.maxTotalRequestBytes ||
       ((budget.modelCallsDispatched === 0) !== (budget.requestBytesReserved === 0)) ||
       budget.requestBytesReserved > budget.modelCallsDispatched * plan.limits.maxRequestBytes ||

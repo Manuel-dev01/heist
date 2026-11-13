@@ -40,7 +40,7 @@ export const HarnessConfigSchema = z.object({
   maxRounds: z.number().int().min(1).max(20).default(4),
   maxToolCallsPerRound: z.number().int().min(1).max(8).default(4),
   maxOutputTokens: z.number().int().min(1).max(2048).default(128),
-  maxModelLatencyMs: z.number().int().min(10).max(60000).default(30000),
+  maxModelLatencyMs: z.number().int().min(10).max(130000).default(30000),
   providerConfig: z.record(z.string().max(80), z.json()).default({}).refine((value) => JSON.stringify(value).length <= 10000, 'Provider configuration too large'),
 }).strict();
 export type HarnessConfigInput = z.input<typeof HarnessConfigSchema>;
