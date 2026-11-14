@@ -13,6 +13,8 @@ export function css(text: string): CSSProperties {
     if (i <= 0) continue;
     out[camel(part.slice(0, i))] = part.slice(i + 1).trim();
   }
+  // Soft edges: any element with a full border gets a radius (overridable per element type via --r in heist.css).
+  if (/^[1-9]/.test(out.border ?? '') && !out.borderRadius) out.borderRadius = 'var(--r, 12px)';
   if (cache.size < 4000) cache.set(text, out);
   return out as CSSProperties;
 }

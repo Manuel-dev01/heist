@@ -331,9 +331,9 @@ export class Landing extends Component {
             <div style={css('font-weight:700;font-size:clamp(36px,5vw,72px);line-height:.95;letter-spacing:-.03em;max-width:12ch')}>Pick a vault. Try to rob it.</div>
             <div style={css('display:flex;gap:10px;flex-wrap:wrap')}><a href="/arena" style={css(`background:${R};color:#07080a;font-weight:700;padding:14px 20px`)}>Enter the arena</a><a href="/defense-curve" style={css('border:1px solid #e9ebee;color:#e9ebee;font-weight:600;padding:13px 20px')}>See the Defense Curve</a></div>
           </div>
-          <div style={css('display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:2px;background:#23272d;border:1px solid #23272d')}>
+          <div style={css('display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px')}>
             {ARMS.map((a) => (
-              <a key={a.n} href="/arena" style={css('background:#0c0e11;padding:18px;display:flex;flex-direction:column;gap:18px;min-height:170px')}>
+              <a key={a.n} href="/arena" style={css('background:#0c0e11;border:1px solid #23272d;border-radius:18px;padding:18px;display:flex;flex-direction:column;gap:18px;min-height:170px')}>
                 <div style={css(`font-family:${mono};font-size:12px;color:#6b7179`)}>VAULT {a.n}</div>
                 <div><div style={css('font-weight:700;font-size:22px')}>{a.name}</div><div style={css('font-size:13px;color:#9aa0a8')}>{a.layer}</div></div>
                 <div style={css(`margin-top:auto;font-family:${mono};font-size:14px;color:${a.col}`)}>{a.br}</div>

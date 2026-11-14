@@ -2,7 +2,7 @@
 .hx-page a { color: inherit; }
 .hx-page a:hover { color: #fff; }
 .hx-wrap { max-width: 1280px; margin: 0 auto; }
-.hx-vaults { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 2px; background: #23272d; }
+.hx-vaults { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 10px; padding: 4px clamp(16px, 2.4vw, 28px) 12px; }
 .hx-cols-3 { display: grid; grid-template-columns: 1fr 1.15fr 0.9fr; }
 .hx-cols-2 { display: grid; grid-template-columns: 1fr 1fr; }
 .hx-proof { display: grid; grid-template-columns: 1.1fr 1fr 0.9fr; }
@@ -12,6 +12,23 @@
 .hx-split { display: grid; grid-template-columns: 1fr 380px; gap: 32px; align-items: end; }
 .hx-ledger { display: grid; grid-template-columns: 220px 1fr 220px; gap: 24px; align-items: center; }
 .hx-scroll-x { overflow-x: auto; }
+/* Soft edges: rounded controls everywhere; bordered boxes get var(--r) from lib/css.ts. */
+button, input, textarea, select { border-radius: 10px; --r: 10px; }
+a[style*="padding"] { border-radius: 10px; --r: 10px; }
+.hx-nav a { border-radius: 0; }
+button, a { transition: background-color .18s ease, border-color .18s ease, color .18s ease, opacity .18s ease; }
+pre { border-radius: 14px; }
+.panel { border-radius: 20px; }
+.scenario-option { border-radius: 14px; }
+.mode-switch { border-radius: 12px; }
+.mode-switch label { border-radius: 8px; }
+.button { border-radius: 10px; }
+.input-field textarea { border-radius: 12px !important; }
+.loading-square { border-radius: 3px; }
+.result-panel:after { display: none; }
+.oracle-grid, .session-metrics, .report-counts { border-radius: 14px; overflow: hidden; }
+.reports-boundary-note, .report-empty, .report-no-groups, .curve-empty, .error-notice, .transcript-tool-calls { border-radius: 16px; }
+.micro-label[style], .setup-panel .panel-topline > .micro-label, .local-badge, .outcome-badge, .tool-status, .event-round, .curve-state, .report-source-badge, .tag-output { border-radius: 8px; }
 @media (max-width: 1100px) {
   .hx-vaults { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .hx-exploits { grid-template-columns: repeat(2, minmax(0, 1fr)); }

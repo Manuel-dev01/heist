@@ -11,9 +11,9 @@ export function KitePanel() {
       <Eyebrow color={C.gold}>KITE LAYER · LAST LINE OF DEFENSE · KITE PASSPORT SPENDING CAPS · LIVE</Eyebrow>
       <h2 style={css('margin:0;font-weight:700;font-size:clamp(28px,3.6vw,40px);line-height:1;letter-spacing:-.02em;max-width:900px')}>Even a breached agent hits the wallet&apos;s wall.</h2>
       <div style={css(`font-size:15px;color:${C.dim};line-height:1.5;max-width:860px`)}>The vault agent pays through a Kite Passport session its owner approved by passkey, with hard caps. Kite, not the model, decides whether money moves. Both refusals below are Kite&apos;s own error codes from its live backend.</div>
-      <div className="hx-cols-2" style={css('gap:2px;background:#23272d')}>
+      <div className="hx-cols-2" style={css('gap:14px')}>
         {k.refusals.map((r) => (
-          <div key={r.code} style={css(`background:${C.panel};padding:20px;display:flex;flex-direction:column;gap:12px`)}>
+          <div key={r.code} style={css(`background:${C.panel};border:1px solid ${C.line};border-radius:20px;padding:22px;display:flex;flex-direction:column;gap:12px`)}>
             <div style={css(`display:flex;justify-content:space-between;gap:12px;font-family:${mono};font-size:11px;letter-spacing:.12em;color:${C.mute}`)}><div>{r.at.replace('T', ' ').slice(0, 19)} UTC</div><div style={css(`color:${C.teal}`)}>$0 MOVED</div></div>
             <div style={css(`font-weight:700;font-size:clamp(34px,4vw,48px);line-height:.9;letter-spacing:-.03em;color:${C.teal}`)}>REFUSED</div>
             <div style={css(`font-family:${mono};font-size:13px;color:${C.red}`)}>{r.code}{r.reason ? ' · ' + r.reason : ''}</div>

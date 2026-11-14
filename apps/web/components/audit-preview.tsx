@@ -15,9 +15,9 @@ export function AuditPreview({ arms, breachHash, exploit }: Props) {
   const stats = arm ? (arm.combined ?? arm) : null;
   const fixes: [keyof typeof on, string, string][] = [['guard', 'Guard pre-screen', 'SERV Prompt Guard filters injected instructions'], ['kronos', 'Kronos reasoning check', 'second reasoning pass (requires Guard in measured setups)'], ['enforced', 'Enforced recipient allowlist', 'policy enforced in code; measured with Guard + Kronos + Multipath + Shadow'], ['kite', 'Kite spending cap', 'per-payment cap enforced by Kite Passport · measured live']];
   return (
-    <div style={css('display:flex;flex-direction:column;gap:2px;background:#23272d')}>
-      <div className="hx-cols-2" style={css(`background:${C.bg}`)}>
-        <div style={css(`padding:24px clamp(16px,2.4vw,28px);border-right:1px solid ${C.line};display:flex;flex-direction:column;gap:12px`)}>
+    <div style={css('display:flex;flex-direction:column;padding:0 clamp(16px,2.4vw,28px)')}>
+      <div className="hx-cols-2" style={css('gap:14px')}>
+        <div style={css(`padding:24px clamp(16px,2.2vw,26px);border:1px solid ${C.line};border-radius:20px;background:#0a0c0f;display:flex;flex-direction:column;gap:12px`)}>
           <div style={css(`font-family:${mono};font-size:11px;letter-spacing:.16em;color:${C.dim}`)}>RAW GPT-5.4-NANO · NO DEFENSES (MEASURED)</div>
           <div style={css('display:grid;grid-template-columns:1fr 1fr;gap:10px')}>
             {[['attempts', (arms[0]!.combined?.attacks ?? 0).toLocaleString('en-US')], ['breaches', String(arms[0]!.combined?.breaches ?? 0)], ['benign done', `${arms[0]!.benignOk}/${arms[0]!.benign}`], ['95% upper', '≤' + pct(arms[0]!.combined?.upper95 ?? 0)]].map(([k, v]) => (
@@ -27,12 +27,12 @@ export function AuditPreview({ arms, breachHash, exploit }: Props) {
           <div style={css(`font-family:${mono};font-size:11px;letter-spacing:.16em;color:${C.dim};margin-top:6px`)}>TOP EXPLOIT</div>
           <a href="/proof" style={css(`background:#140807;border:1px solid ${C.red};padding:12px;font-family:${mono};font-size:12px;line-height:1.6`)}>{exploit.id} · {exploit.channel} · {exploit.goal}<br /><span style={css(`color:${C.dim}`)}>attacker added to the allowlist · sha256 {breachHash.slice(0, 8)}… · open proof →</span></a>
         </div>
-        <div style={css('padding:24px clamp(16px,2.4vw,28px);display:flex;flex-direction:column;gap:10px;min-width:0')}>
+        <div style={css(`padding:24px clamp(16px,2.2vw,26px);border:1px solid ${C.line};border-radius:20px;background:#0a0c0f;display:flex;flex-direction:column;gap:10px;min-width:0`)}>
           <div style={css(`font-family:${mono};font-size:11px;letter-spacing:.16em;color:${C.dim}`)}>ADD A DEFENSE · SEE THE MEASURED RESULT</div>
           {fixes.map(([k, name, note]) => (
             <button key={k} type="button" aria-pressed={on[k]} onClick={() => setOn((s) => ({ ...s, [k]: !s[k] }))} style={css(`text-align:left;display:grid;grid-template-columns:1fr 34px;gap:10px;align-items:center;background:${on[k] ? '#0c1714' : C.panel};border:1px solid ${on[k] ? '#2e5a4d' : C.line};padding:10px 12px;color:${C.text}`)}>
               <div><div style={css('font-weight:600;font-size:14px')}>{name}</div><div style={css(`font-family:${mono};font-size:10px;color:${C.mute};line-height:1.5`)}>{note}</div></div>
-              <div style={css(`width:34px;height:18px;background:${on[k] ? C.teal : '#2f343b'};position:relative`)}><div style={css(`position:absolute;top:2px;left:${on[k] ? 16 : 2}px;width:14px;height:14px;background:${C.bg};transition:left .2s`)} /></div>
+              <div style={css(`width:34px;height:18px;border-radius:999px;background:${on[k] ? C.teal : '#2f343b'};position:relative`)}><div style={css(`position:absolute;top:2px;left:${on[k] ? 16 : 2}px;width:14px;height:14px;border-radius:50%;background:${C.bg};transition:left .2s`)} /></div>
             </button>
           ))}
           <div style={css(`margin-top:6px;background:${C.panel};border:1px solid ${C.line};padding:12px;font-family:${mono};font-size:12px;line-height:1.7`)}>

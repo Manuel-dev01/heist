@@ -28,15 +28,15 @@ export default function ArenaPage() {
             <div><div style={css(`font-size:26px;color:${C.gold}`)}>40 / 40</div><div style={css(`font-size:10px;letter-spacing:.14em;color:${C.mute}`)}>BENIGN TASKS, EVERY VAULT</div></div>
           </div>
         </div>
-        <div className="hx-vaults" style={css(`border-top:1px solid ${C.line};border-bottom:1px solid ${C.line}`)}>
+        <div className="hx-vaults">
           {evidence.arms.map((a, i) => {
             const s = vaultStats(a), hit = s.breaches > 0, col = hit ? C.red : C.teal;
             return (
-              <div key={a.id} className="hx-vault-card" style={css(`background:${hit ? '#140807' : C.panel};padding:18px 16px;display:flex;flex-direction:column;gap:16px;min-height:400px`)}>
+              <div key={a.id} className="hx-vault-card" style={css(`background:${hit ? '#140807' : C.panel};border:1px solid ${hit ? '#5a1d18' : C.line};border-radius:20px;padding:18px 16px;display:flex;flex-direction:column;gap:16px;min-height:400px`)}>
                 <div style={css(`display:flex;justify-content:space-between;font-family:${mono};font-size:11px;color:${C.mute}`)}><div>VAULT {a.n}</div><div style={css(`color:${col}`)}>{hit ? 'ROBBED' : 'HELD'}</div></div>
                 <div><div style={css('font-weight:700;font-size:24px;line-height:1')}>{a.name}</div><div style={css(`font-size:13px;color:${C.dim};margin-top:4px`)}>{a.layer}</div></div>
                 <div className="hx-slots" style={css('display:flex;flex-direction:column-reverse;gap:3px')}>
-                  {LAYERS.map((l, k) => { const on = k < i; return <div key={l} style={css(`height:18px;border:1px solid ${on ? '#2e5a4d' : '#1c1f24'};background:${on ? '#0f2621' : 'transparent'};font-family:${mono};font-size:9px;letter-spacing:.08em;color:${C.teal};display:flex;align-items:center;padding:0 6px`)}>{on ? l : ''}</div>; })}
+                  {LAYERS.map((l, k) => { const on = k < i; return <div key={l} style={css(`height:18px;border-radius:6px;border:1px solid ${on ? '#2e5a4d' : '#1c1f24'};background:${on ? '#0f2621' : 'transparent'};font-family:${mono};font-size:9px;letter-spacing:.08em;color:${C.teal};display:flex;align-items:center;padding:0 6px`)}>{on ? l : ''}</div>; })}
                 </div>
                 <div style={css(`margin-top:auto;display:flex;flex-direction:column;gap:8px;font-family:${mono};font-size:11px`)}>
                   <div style={css('display:flex;justify-content:space-between')}><div style={css(`color:${C.mute}`)}>ATTACKS</div><div>{s.attacks.toLocaleString('en-US')}</div></div>
@@ -44,7 +44,7 @@ export default function ArenaPage() {
                   <div style={css('display:flex;justify-content:space-between')}><div style={css(`color:${C.mute}`)}>95% UPPER</div><div>≤{pct(s.upper95)}</div></div>
                   <div style={css('display:flex;justify-content:space-between')}><div style={css(`color:${C.mute}`)}>BENIGN OK</div><div>{a.benignOk} / {a.benign}</div></div>
                 </div>
-                <Link href={'/arena/attempt?vault=' + a.n} style={css(`background:${hit ? C.red : 'transparent'};color:${hit ? C.bg : C.text};border:1px solid ${col};text-align:center;padding:11px;font-weight:700;font-size:14px`)}>{hit ? 'Watch the breach' : a.id === 'guard-kronos-multipath-shadow-enforced' ? 'Watch it hold' : 'See Fort Knox hold'}</Link>
+                <Link href={'/arena/attempt?vault=' + a.n} style={css(`background:${hit ? C.red : 'transparent'};color:${hit ? C.bg : C.text};border:1px solid ${col};text-align:center;padding:11px 6px;font-weight:700;font-size:13px;white-space:nowrap`)}>{hit ? 'Watch the breach' : a.id === 'guard-kronos-multipath-shadow-enforced' ? 'Watch it hold' : 'See Fort Knox hold'}</Link>
               </div>
             );
           })}

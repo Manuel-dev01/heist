@@ -43,7 +43,7 @@ function Toggle({ on, onClick, title, note, id }: { on: boolean; onClick: () => 
   return (
     <button type="button" data-audit={id} aria-pressed={on} onClick={onClick} style={css(`text-align:left;display:grid;grid-template-columns:1fr 34px;gap:10px;align-items:center;background:${on ? '#0c1714' : C.panel};border:1px solid ${on ? '#2e5a4d' : C.line};padding:9px 12px;color:${C.text}`)}>
       <div><div style={css('font-weight:600;font-size:14px')}>{title}</div>{note && <div style={css(`font-family:${mono};font-size:10px;color:${C.mute};line-height:1.5`)}>{note}</div>}</div>
-      <div aria-hidden style={css(`width:34px;height:18px;background:${on ? C.teal : '#2f343b'};position:relative`)}><div style={css(`position:absolute;top:2px;left:${on ? 16 : 2}px;width:14px;height:14px;background:${C.bg};transition:left .2s`)} /></div>
+      <div aria-hidden style={css(`width:34px;height:18px;border-radius:999px;background:${on ? C.teal : '#2f343b'};position:relative`)}><div style={css(`position:absolute;top:2px;left:${on ? 16 : 2}px;width:14px;height:14px;border-radius:50%;background:${C.bg};transition:left .2s`)} /></div>
     </button>
   );
 }
@@ -93,8 +93,8 @@ export function PolicyAudit({ goals, channels }: { goals: Record<string, string>
   const s = report?.summary, clean = !!report && s!.breaches === 0 && report.legitimateTask.paid;
 
   return (
-    <div className="hx-cols-2" style={css(`background:${C.bg};border-top:1px solid ${C.line}`)}>
-      <div style={css(`padding:24px clamp(16px,2.4vw,28px);border-right:1px solid ${C.line};display:flex;flex-direction:column;gap:12px;min-width:0`)}>
+    <div className="hx-cols-2" style={css('gap:14px;padding:0 clamp(16px,2.4vw,28px) 8px')}>
+      <div style={css(`padding:24px clamp(16px,2.2vw,26px);border:1px solid ${C.line};border-radius:20px;background:#0a0c0f;display:flex;flex-direction:column;gap:12px;min-width:0`)}>
         <div style={css(head(C.teal))}>01 · YOUR AGENT&apos;S SPENDING SETUP</div>
         <div style={css('display:flex;gap:6px;flex-wrap:wrap')}>
           {PRESETS.map(([id, name, p]) => (
@@ -136,7 +136,7 @@ export function PolicyAudit({ goals, channels }: { goals: Record<string, string>
         {state === 'error' && <div role="alert" style={css(`border:1px solid ${C.red};color:${C.red};padding:10px;font-family:${mono};font-size:12px`)}>{error}</div>}
       </div>
 
-      <div aria-live="polite" aria-busy={state === 'running'} style={css('padding:24px clamp(16px,2.4vw,28px);display:flex;flex-direction:column;gap:14px;min-width:0')}>
+      <div aria-live="polite" aria-busy={state === 'running'} style={css(`padding:24px clamp(16px,2.2vw,26px);border:1px solid ${C.line};border-radius:20px;background:#0a0c0f;display:flex;flex-direction:column;gap:14px;min-width:0`)}>
         <div style={css(head(C.dim))}>02 · REPORT{report ? ' · ' + (report.reportHash.slice(0, 12)) + '…' : ''}</div>
         {!report ? <div style={css(`${box};color:${C.dim};font-family:${mono};font-size:12px`)}>{state === 'error' ? 'No report yet.' : 'Running the corpus…'}</div> : <>
           <div style={css(`display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;opacity:${state === 'running' ? '.5' : '1'}`)}>
@@ -159,7 +159,7 @@ export function PolicyAudit({ goals, channels }: { goals: Record<string, string>
                 {Object.entries(rows).sort((a, b) => b[1].attacks - a[1].attacks).map(([k, v]) => (
                   <div key={k} style={css(`font-family:${mono};font-size:11px;display:flex;flex-direction:column;gap:3px`)}>
                     <div style={css('display:flex;justify-content:space-between;gap:8px')}><span style={css(`color:${C.dim}`)}>{names[k] ?? k}</span><span style={css(`color:${v.breaches ? C.red : C.teal}`)}>{v.breaches}/{v.attacks}</span></div>
-                    <div style={css('height:4px;background:#1b1f24')}><div style={css(`height:4px;width:${(v.breaches / v.attacks) * 100}%;background:${C.red}`)} /></div>
+                    <div style={css('height:4px;background:#1b1f24;border-radius:999px;overflow:hidden')}><div style={css(`height:4px;border-radius:999px;width:${(v.breaches / v.attacks) * 100}%;background:${C.red}`)} /></div>
                   </div>
                 ))}
               </div>
