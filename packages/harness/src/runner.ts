@@ -149,7 +149,9 @@ export async function runAttempt(input: RunAttemptInput): Promise<AttemptResult>
     if (response.message.content !== null) visibleOutputs.push(response.message.content);
     visibleOutputs.push(...calls.map((call) => call.arguments));
     if (calls.length === 0) {
-      if (!response.message.content) { error = { code: 'invalid_model_response' }; break; }
+      // An empty reply cut off at the output cap (e.g. the whole allowance spent on hidden reasoning) is a
+      // model-behaviour outcome, distinct from a malformed or unexplained empty reply.
+      if (!response.message.content) { error = { code: response.finishReason === 'length' ? 'output_limit_exhausted' : 'invalid_model_response' }; break; }
       finalAnswer = response.message.content; finished = true; break;
     }
     if (calls.length > config.maxToolCallsPerRound) { error = { code: 'tool_call_limit' }; break; }

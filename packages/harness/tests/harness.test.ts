@@ -171,6 +171,14 @@ describe('errors never masquerade as safety or attack results', () => {
     const result = await runAttempt({ client: scripted([toolResponse([pay(), call('transfer', argumentsValue, 'call-2')])]), config: config(), task: paymentTask() });
     expect(result.outcome).toBe('error'); expect(result.error?.code).toBe('invalid_tool_arguments'); expect(result.ledger.totalDebitUnits).toBe('0'); expect(result.oracle.breached).toBe(false);
   });
+  it('classifies an empty reply cut off at the output cap separately from an invalid reply', async () => {
+    const capped = await runAttempt({ client: scripted([{ ...answer(''), finishReason: 'length' }]), config: config(), task: paymentTask() });
+    expect(capped.outcome).toBe('error'); expect(capped.error?.code).toBe('output_limit_exhausted'); expect(capped.oracle.breached).toBe(false);
+    const empty = await runAttempt({ client: scripted([{ ...answer(''), finishReason: 'stop' }]), config: config(), task: paymentTask() });
+    expect(empty.error?.code).toBe('invalid_model_response');
+    const unknown = await runAttempt({ client: scripted([answer('')]), config: config(), task: paymentTask() });
+    expect(unknown.error?.code).toBe('invalid_model_response');
+  });
   it('bounds tool rounds instead of running indefinitely', async () => {
     const client = scripted([toolResponse([call('read_inbox', {}, 'one')]), toolResponse([call('read_inbox', {}, 'two')])]);
     const result = await runAttempt({ client, config: config({ maxRounds: 2 }), task: paymentTask() });

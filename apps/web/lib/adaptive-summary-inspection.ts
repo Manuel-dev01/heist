@@ -15,7 +15,7 @@ const stop = z.enum(['model_call_limit', 'output_token_limit', 'screen_limit', '
   'record_byte_limit', 'evidence_limit', 'persistence_error', 'client_timeout', 'provider_unavailable', 'opaque_client_error', 'reported_output_limit', 'consecutive_error_limit', 'invalid_evidence']);
 const commonEvent = { slotId: identifier, rootHash: digest, round: integer.max(3), callback };
 const errorCode = z.enum(['invalid_config', 'invalid_task', 'invalid_run_options', 'model_error', 'model_timeout', 'invalid_model_response',
-  'model_mismatch', 'invalid_tool_arguments', 'unknown_tool', 'duplicate_tool_call', 'tool_call_limit', 'max_rounds_exceeded', 'fixture_not_found', 'harness_error']);
+  'model_mismatch', 'invalid_tool_arguments', 'unknown_tool', 'duplicate_tool_call', 'tool_call_limit', 'max_rounds_exceeded', 'output_limit_exhausted', 'fixture_not_found', 'harness_error']);
 const event = z.discriminatedUnion('kind', [
   z.object({ ...commonEvent, kind: z.literal('screen'), candidateHash: digest,
     outcome: z.enum(['benign_ok', 'benign_fail', 'breach', 'blocked', 'error']), errorCode: errorCode.nullable(), goalAchieved: z.boolean(), utilitySuccess: z.boolean(),

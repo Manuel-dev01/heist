@@ -36,9 +36,10 @@ export const BenchmarkLimitsSchema = z.object({
   // attempt's existing reserved call/output slots and are capped per run.
   noResponseRetry: z.object({ maxRetries: z.number().int().min(1).max(1000), perTryTimeoutMs: z.number().int().min(1001).max(60000) }).strict().optional(),
   // Optional: errored attempts with these codes are model-behaviour outcomes (the model used every
-  // allowed round), not operational failures. They stay explicit error records but neither count
+  // allowed round, or its whole output allowance with no visible reply), not operational failures. They stay explicit error records but neither count
   // toward nor break maxConsecutiveErrors/maxTotalErrors; like a completed attempt they reset the streak.
-  scoredErrorCodes: z.tuple([z.literal('max_rounds_exceeded')]).optional(),
+  scoredErrorCodes: z.array(z.enum(['max_rounds_exceeded', 'output_limit_exhausted'])).min(1).max(2)
+    .refine((codes) => new Set(codes).size === codes.length, { message: 'Duplicate scored error code.' }).optional(),
 }).strict();
 export function isOperationalError(record: { outcome: string; error?: { code: string } | null }, limits: { scoredErrorCodes?: readonly string[] | undefined }): boolean {
   return record.outcome === 'error' && !(record.error && limits.scoredErrorCodes?.includes(record.error.code));

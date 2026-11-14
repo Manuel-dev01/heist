@@ -13,7 +13,7 @@ vi.mock('@heist/serv', async (importOriginal) => {
 const factory = vi.mocked(createServClient);
 const TEST_KEY = 'offline-scored-error-test-key-never-sent';
 type Request = Parameters<ReturnType<typeof createServClient>['complete']>[0];
-const SCORED = { scoredErrorCodes: ['max_rounds_exceeded'] as ['max_rounds_exceeded'] };
+const SCORED: { scoredErrorCodes: ('max_rounds_exceeded' | 'output_limit_exhausted')[] } = { scoredErrorCodes: ['max_rounds_exceeded'] };
 
 function plan(limits: Partial<BenchmarkLimits> = {}, attackCount = 3): BenchmarkPlan {
   const context: PublicTargetContext = {
@@ -116,6 +116,9 @@ describe('scored max_rounds_exceeded outcomes', () => {
   it('accepts only max_rounds_exceeded as a scored code', () => {
     expect(() => plan({ scoredErrorCodes: ['model_error'] as unknown as ['max_rounds_exceeded'] })).toThrow();
     expect(() => plan({ scoredErrorCodes: ['max_rounds_exceeded', 'max_rounds_exceeded'] as unknown as ['max_rounds_exceeded'] })).toThrow();
+    expect(() => plan({ scoredErrorCodes: ['max_rounds_exceeded', 'output_limit_exhausted'] })).not.toThrow();
+    expect(isOperationalError({ outcome: 'error', error: { code: 'output_limit_exhausted' } }, { scoredErrorCodes: ['max_rounds_exceeded', 'output_limit_exhausted'] })).toBe(false);
+    expect(isOperationalError({ outcome: 'error', error: { code: 'output_limit_exhausted' } }, SCORED)).toBe(true);
     expect(isOperationalError({ outcome: 'error', error: { code: 'max_rounds_exceeded' } }, {})).toBe(true);
     expect(isOperationalError({ outcome: 'error', error: { code: 'max_rounds_exceeded' } }, SCORED)).toBe(false);
     expect(isOperationalError({ outcome: 'error', error: { code: 'model_error' } }, SCORED)).toBe(true);

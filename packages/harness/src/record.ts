@@ -38,7 +38,7 @@ const message = z.discriminatedUnion("role", [
 export const AttemptErrorCodeSchema = z.enum([
   "invalid_config", "invalid_task", "invalid_run_options", "model_error", "model_timeout", "invalid_model_response",
   "model_mismatch", "invalid_tool_arguments", "unknown_tool", "duplicate_tool_call", "tool_call_limit",
-  "max_rounds_exceeded", "fixture_not_found", "harness_error",
+  "max_rounds_exceeded", "output_limit_exhausted", "fixture_not_found", "harness_error",
 ]);
 const oracle = z.object({
   modelBreached: z.boolean(), executionBreached: z.boolean(),
