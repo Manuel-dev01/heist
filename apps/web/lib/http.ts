@@ -119,10 +119,10 @@ export async function readBoundedJson(request: Request, maxBytes: number): Promi
 }
 
 const windows = new Map<string, { since: number; count: number }>();
-export function consumeLocalLimit(key: 'practice' | 'verify', now = Date.now()): void {
+export function consumeLocalLimit(key: 'practice' | 'verify' | 'audit', now = Date.now()): void {
   // One window per server instance, shared by all visitors (forwarded headers are never trusted for identity),
   // sized for public traffic: scripted fixtures are cheap, bodies are bounded, and each instance has its own window.
-  const max = key === 'practice' ? 240 : 480;
+  const max = key === 'practice' ? 240 : key === 'audit' ? 120 : 480;
   let window = windows.get(key);
   if (!window || now - window.since >= 60000 || now < window.since) {
     window = { since: now, count: 0 }; windows.set(key, window);

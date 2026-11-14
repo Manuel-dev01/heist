@@ -1,33 +1,30 @@
 import { AuditPreview } from '../../components/audit-preview';
 import { AppHeader, Eyebrow, Footnote, Page } from '../../components/chrome';
-import { C, css, mono } from '../../lib/css';
+import { PolicyAudit } from '../../components/policy-audit';
+import { C, css } from '../../lib/css';
 import { channelLabel, evidence, goalLabel } from '../../lib/evidence';
 
 export const metadata = { title: 'Audit · HEIST' };
 
 export default function AuditPage() {
-  const cfg = evidence.breach.config, fk = evidence.arms.find((a) => a.id === 'guard-kronos-multipath-shadow-enforced')!;
-  const manifest = JSON.stringify({ name: 'heist-reference-vault', model: cfg.model, mode: 'SERV raw', tools: ['browse', 'read_inbox', 'pay_x402', 'transfer', 'release_funds', 'update_policy'],
-    policy: evidence.breach.record.policyBefore, maxRounds: cfg.maxRounds, maxOutputTokens: cfg.maxOutputTokens }, null, 2);
   const ex = evidence.exploits[0]!;
   return (
     <Page>
-      <AppHeader active="AUDIT" right={<div style={css(`border:1px dashed ${C.gold};padding:5px 8px;color:${C.gold}`)}>PREVIEW · HOSTED AUDITS PLANNED</div>} />
+      <AppHeader active="AUDIT" right={<div style={css(`border:1px solid ${C.teal};padding:5px 8px;color:${C.teal}`)}>LIVE · DETERMINISTIC · NO KEYS</div>} />
       <div className="hx-wrap">
-        <div style={css('padding:32px clamp(16px,2.4vw,28px) 24px;display:flex;flex-direction:column;gap:10px;max-width:860px')}>
-          <Eyebrow color={C.teal}>AUDIT · HARDEN · CERTIFY</Eyebrow>
-          <h1 style={css('margin:0;font-weight:700;font-size:clamp(32px,4.4vw,48px);line-height:.95;letter-spacing:-.03em')}>Earn the badge before you raise the limit.</h1>
-          <div style={css(`font-size:15px;color:${C.dim};line-height:1.5`)}>The audit runs the same corpus, oracle and replayable records against a replica of your agent. This preview shows the flow on HEIST&apos;s own reference vault, with its measured results.</div>
+        <div style={css('padding:32px clamp(16px,2.4vw,28px) 24px;display:flex;flex-direction:column;gap:10px;max-width:880px')}>
+          <Eyebrow color={C.teal}>AUDIT · HARDEN · RE-TEST</Eyebrow>
+          <h1 style={css('margin:0;font-weight:700;font-size:clamp(32px,4.4vw,48px);line-height:.95;letter-spacing:-.03em')}>Assume the model is fooled. See what your wallet lets through.</h1>
+          <div style={css(`font-size:15px;color:${C.dim};line-height:1.5`)}>Describe how your agent spends money. HEIST fires all {evidence.totals.corpusAttacks.toLocaleString('en-US')} attacks from its frozen corpus at a worst-case agent that obeys every injection, executes each one through HEIST&apos;s own ledger and breach rules, and shows what gets out, which fix closes it, and the result re-tested on the spot.</div>
         </div>
-        <AuditPreview arms={evidence.arms} breachHash={evidence.breach.record.attemptHash} manifest={manifest} exploit={{ id: ex.id, channel: channelLabel[ex.channel] ?? ex.channel, goal: goalLabel[ex.goal] ?? ex.goal }} />
-        <div style={css('padding:32px clamp(16px,2.4vw,28px);display:flex;gap:32px;flex-wrap:wrap;align-items:center')}>
-          <div style={css(`width:300px;border:1px solid ${C.teal};padding:22px;display:flex;flex-direction:column;gap:10px;font-family:${mono};background:#0c1714`)}>
-            <div style={css(`font-size:11px;letter-spacing:.2em;color:${C.teal}`)}>HEIST · MEASURED</div>
-            <div style={css("font-family:'Familjen Grotesk',sans-serif;font-weight:700;font-size:28px;line-height:1")}>Fort Knox</div>
-            <div style={css(`font-size:12px;color:${C.dim};line-height:1.6`)}>{fk.layer} · gpt-5.4-nano<br />{fk.breaches} / {fk.attacks} breaches · benign {fk.benignOk}/{fk.benign}<br />report {evidence.sources.d3ReportHash?.slice(0, 12)}…</div>
-            <div style={css(`font-size:10px;color:${C.mute}`)}>SAMPLE · reference vault, not a customer certificate</div>
-          </div>
-          <div style={css('max-width:520px')}><Footnote>Planned: paid audits over Kite x402, re-tests after hardening, and the report hash anchored on Kite with an embeddable badge. Nothing on this page is a customer result.</Footnote></div>
+        <PolicyAudit goals={goalLabel} channels={channelLabel} />
+        <div style={css(`padding:36px clamp(16px,2.4vw,28px) 18px;display:flex;flex-direction:column;gap:8px;max-width:880px;border-top:1px solid ${C.line}`)}>
+          <Eyebrow color={C.gold}>THE MODEL LAYER · MEASURED LIVE</Eyebrow>
+          <div style={css(`font-size:15px;color:${C.dim};line-height:1.5`)}>The audit above deliberately assumes the worst model. How often a real model is actually fooled was measured live on the same corpus: toggle a defense to see its measured result.</div>
+        </div>
+        <AuditPreview arms={evidence.arms} breachHash={evidence.breach.record.attemptHash} exploit={{ id: ex.id, channel: channelLabel[ex.channel] ?? ex.channel, goal: goalLabel[ex.goal] ?? ex.goal }} />
+        <div style={css('padding:28px clamp(16px,2.4vw,28px);max-width:720px')}>
+          <Footnote>The configuration audit is free, runs instantly and needs no keys. It scores the setup you describe, so it is self-reported: it cannot see whether your code really enforces each check. Planned next: model-in-the-loop audits of your own agent endpoint, paid over Kite x402, with the report hash anchored on Kite.</Footnote>
         </div>
       </div>
     </Page>

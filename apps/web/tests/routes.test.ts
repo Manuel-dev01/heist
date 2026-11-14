@@ -1,6 +1,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import { POST as practice } from '../app/api/practice/route';
 import { POST as verify } from '../app/api/verify/route';
+import { POST as audit } from '../app/api/audit/route';
 const request = (path: string, value: unknown) => new Request('http://127.0.0.1:3000/api/'+path, {
   method: 'POST', headers: { 'content-type': 'application/json', origin: 'http://127.0.0.1:3000' },
   body: JSON.stringify(value),
@@ -34,6 +35,7 @@ describe('route admission precedes body parsing', () => {
   it.each([
     { path: 'practice', route: practice, max: 240 },
     { path: 'verify', route: verify, max: 480 },
+    { path: 'audit', route: audit, max: 120 },
   ])('charges malformed local JSON and rejects an unread $path body at its limit', async ({ path, route, max }) => {
     vi.useFakeTimers();
     vi.setSystemTime(new Date('2040-01-01T00:00:00.000Z'));
@@ -69,5 +71,23 @@ describe('route admission precedes body parsing', () => {
       }
       expect((await practice(request('practice', { scenario: 'benign', enforcement: 'enforce' }))).status).toBe(200);
     } finally { vi.useRealTimers(); }
+  });
+});
+
+describe('policy audit route', () => {
+  const manifest = { name: 'route-test', maxPerTransferUnits: '250000', maxTotalDebitUnits: '1000000', kiteCapUnits: null,
+    checks: { allowlist: true, invoiceMatch: false, perTransferCap: true, totalCap: false, lockPolicy: false }, tools: { updatePolicy: true, releaseFunds: false, transfer: true } };
+  it('returns a hashed deterministic report for a valid manifest', async () => {
+    const response = await audit(request('audit', manifest));
+    expect(response.status).toBe(200);
+    const body = await response.json() as { attacks: number; reportHash: string; summary: { breaches: number } };
+    expect(body.attacks).toBe(1000);
+    expect(body.reportHash).toMatch(/^[0-9a-f]{64}$/);
+    expect(body.summary.breaches).toBeGreaterThan(0);
+  });
+  it('rejects unknown fields and cross-site origins', async () => {
+    expect((await audit(request('audit', { ...manifest, apiKey: 'x' }))).status).toBe(400);
+    const hostile = new Request('http://127.0.0.1:3000/api/audit', { method: 'POST', headers: { 'content-type': 'application/json', origin: 'https://evil.example' }, body: JSON.stringify(manifest) });
+    expect((await audit(hostile)).status).toBe(403);
   });
 });

@@ -301,9 +301,9 @@ export class Landing extends Component {
             <div className="hx-chapter" style={css(`position:absolute;left:clamp(18px,4vw,56px);top:50%;transform:translateY(-50%);max-width:400px;display:flex;flex-direction:column;gap:14px;opacity:${V.o7};pointer-events:${V.pe7}`)}>
               <div style={css(`font-family:${mono};font-size:12px;letter-spacing:.14em;color:${T}`)}>AUDIT · CERTIFICATE</div>
               <div style={css('font-weight:700;font-size:clamp(30px,3.6vw,52px);line-height:1;letter-spacing:-.02em')}>Earn the badge before you raise the limit.</div>
-              <div style={css('font-size:16px;line-height:1.5;color:#b9bec6')}>Paste an agent manifest. Get breach rate, top exploits and value at risk. Harden, re-test, certify.</div>
-              <div style={css(`font-family:${mono};font-size:10px;color:#c9a05a;border:1px dashed #c9a05a;padding:6px 8px;align-self:flex-start`)}>PREVIEW · HOSTED AUDITS PLANNED</div>
-              <div style={css('display:flex;gap:10px;flex-wrap:wrap')}><a href="/audit" style={css(`background:${T};color:#07080a;font-weight:700;padding:14px 20px`)}>See the audit preview</a><a href="/arena" style={css('border:1px solid #e9ebee;color:#e9ebee;font-weight:600;padding:13px 20px')}>Enter the arena</a></div>
+              <div style={css('font-size:16px;line-height:1.5;color:#b9bec6')}>Describe how your agent spends. HEIST fires all 1,000 attacks at a fully fooled agent and shows breaches, value at risk, top exploits and the fix that closes each one, re-tested instantly.</div>
+              <div style={css(`font-family:${mono};font-size:10px;color:${T};border:1px solid ${T};padding:6px 8px;align-self:flex-start`)}>LIVE · FREE · NO KEYS</div>
+              <div style={css('display:flex;gap:10px;flex-wrap:wrap')}><a href="/audit" style={css(`background:${T};color:#07080a;font-weight:700;padding:14px 20px`)}>Audit my agent</a><a href="/arena" style={css('border:1px solid #e9ebee;color:#e9ebee;font-weight:600;padding:13px 20px')}>Enter the arena</a></div>
             </div>
 
             <div style={css(`position:absolute;left:50%;top:50%;transform:translate(-50%,-50%) scale(${V.toastScale});opacity:${V.toastO};transition:opacity .25s, transform .25s;pointer-events:none;text-align:center;display:flex;flex-direction:column;gap:8px`)}>
