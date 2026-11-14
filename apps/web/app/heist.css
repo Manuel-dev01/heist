@@ -30,5 +30,8 @@
   .hx-chapter { left: 16px !important; right: 16px !important; max-width: none !important; }
   .hx-rail { display: none !important; }
   .hx-legend { grid-template-columns: repeat(4, minmax(0, 1fr)) !important; row-gap: 10px !important; }
-  .hx-vault-card { min-height: 0 !important; }
+  .hx-vault-card { min-height: 0 !important; padding: 14px 16px !important; gap: 10px !important; }
+  .hx-slots { display: none !important; }
+  .hx-same-row { grid-template-columns: 40px 1fr auto !important; gap: 8px !important; }
+  .hx-same-row > :nth-child(3) { display: none; }
 }

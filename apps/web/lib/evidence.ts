@@ -28,6 +28,7 @@ export interface Evidence {
   d2: Omit<ArmSummary, 'id' | 'n' | 'name' | 'layer'> & { model: string; mode: string };
   arms: ArmSummary[]; frontier: ArmSummary & { note: string };
   breach: EvidenceRecord; held: EvidenceRecord; exploits: Exploit[]; adaptive: Adaptive; kite: KiteEvidence | null;
+  sameAttack: { caseId: string; rows: { run: string; armId: string; attempts: number; breached: boolean; outcomes: string[] }[] };
 }
 export interface KiteRefusal { code: string; reason?: string; at: string; request: string; target?: string; message: string; session: { caps: { currency: string; max_amount_per_tx: string; max_total_amount: string }; status: string; spent: string; approvedBy: string; expiresAt: string } }
 export interface KiteEvidence { mode: string; walletBalanceUsd: { before: number; after: number }; agentType: string; refusals: KiteRefusal[] }

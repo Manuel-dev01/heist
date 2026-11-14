@@ -38,12 +38,6 @@ export function AdaptiveSummaryInspector() {
     input.current?.focus();
   }
   return <div className="reports-page adaptive-page">
-    <a className="skip-link" href="#adaptive-inspector">Skip to adaptive summary inspection</a>
-    <header className="site-header">
-      <a className="brand" href="/" aria-label="HEIST home"><span className="brand-mark" aria-hidden="true"><span /><span /><span /></span>HEIST<span className="brand-dot" aria-hidden="true">_</span></a>
-      <nav aria-label="Main navigation"><a href="/arena">Arena</a><a href="/range">Range</a><a href="/reports">Reports</a><a href="/reports/adaptive" aria-current="page">Adaptive</a></nav>
-      <span className="local-badge"><span className="signal-dot" />LOCAL FILE INSPECTION</span>
-    </header>
     <main className="page-width" id="adaptive-inspector">
       <section className="reports-hero" aria-labelledby="adaptive-title">
         <div><p className="eyebrow">EVIDENCE / ADAPTIVE DISCOVERY</p><h1 id="adaptive-title">FOLLOW THE<br /><span>SEARCH.</span><span className="reports-underscore">_</span></h1><p>Read the branches. Keep stops and unknowns in view.<br />A selected candidate is a discovery signal.</p></div>
@@ -57,7 +51,6 @@ export function AdaptiveSummaryInspector() {
       {inspection?.valid ? <AdaptiveReadout summary={inspection.summary} fileName={fileName} /> : <section className="report-empty" aria-label="No adaptive summary displayed"><span aria-hidden="true">[ — ]</span><h2>{inspection ? 'Summary withheld.' : 'Follow a recorded search.'}</h2><p>{inspection ? 'The previous summary has been cleared. Choose a supported summary to continue.' : 'No attack score, provider activity, or corpus quality is inferred here.'}</p></section>}
       <aside className="report-method-note"><p className="eyebrow">WHAT THIS CHECK MEANS</p><p>The summary hash binds this JSON to its own summaryHash. A summary can be deliberately changed and rehashed. The browser checks compact consistency only; it does not verify original records, oracle decisions, provider origin, authorization or billing. Run the full offline inspector with the original plan and result for deeper local checks.</p></aside>
     </main>
-    <footer className="site-footer page-width"><a className="footer-brand" href="/">HEIST<span>_</span></a><p>READ THE BRANCHES. KEEP THE STOPS.</p><a href="/reports" className="back-top">BENCHMARK REPORTS ↗</a></footer>
   </div>;
 }
 

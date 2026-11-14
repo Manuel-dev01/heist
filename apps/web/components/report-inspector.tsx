@@ -49,12 +49,6 @@ export function ReportInspector() {
   }
 
   return <div className="reports-page">
-    <a className="skip-link" href="#report-inspector">Skip to report inspection</a>
-    <header className="site-header">
-      <a className="brand" href="/" aria-label="HEIST home"><span className="brand-mark" aria-hidden="true"><span /><span /><span /></span>HEIST<span className="brand-dot" aria-hidden="true">_</span></a>
-      <nav aria-label="Main navigation"><a href="/arena">Arena</a><a href="/range">Range</a><a href="/reports" aria-current="page">Reports</a><a href="/defense-curve">Defense curve</a></nav>
-      <span className="local-badge"><span className="signal-dot" />LOCAL FILE INSPECTION</span>
-    </header>
     <main className="page-width" id="report-inspector">
       <section className="reports-hero" aria-labelledby="reports-title">
         <div><p className="eyebrow">EVIDENCE / BRING YOUR OWN REPORT</p><h1 id="reports-title">READ THE<br /><span>EVIDENCE.</span><span className="reports-underscore">_</span></h1><p>A report is a claim with a record attached.<br />Start with coverage. Keep errors in view.</p></div>
@@ -70,7 +64,6 @@ export function ReportInspector() {
       {report ? <ReportReadout report={report} fileName={fileName} /> : <section className="report-empty" aria-label="No report metrics displayed"><span aria-hidden="true">[ — ]</span><h2>{inspection && !inspection.valid ? 'Metrics withheld.' : 'Evidence starts with a file.'}</h2><p>{inspection && !inspection.valid ? 'The previous report has been cleared. Choose a valid report to continue.' : 'No scores, defense curve, or benchmark numbers are inferred here.'}</p></section>}
       <aside className="report-method-note"><p className="eyebrow">WHAT THIS CHECK MEANS</p><p>The hash binds the selected JSON to its own reportHash. It does not authenticate the provider or recompute metrics from attempt entries. A report can be deliberately changed and rehashed. Use the full saved-run verifier with its original plan and entries for deeper local checks.</p></aside>
     </main>
-    <footer className="site-footer page-width"><a className="footer-brand" href="/">HEIST<span>_</span></a><p>READ THE COVERAGE. KEEP THE ERRORS.</p><a href="/arena" className="back-top">BACK TO ARENA ↗</a></footer>
   </div>;
 }
 

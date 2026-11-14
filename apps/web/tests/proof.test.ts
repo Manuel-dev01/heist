@@ -37,3 +37,12 @@ describe('V6 Kite evidence', () => {
     for (const r of k.refusals) { expect(r.session.spent).toBe('0'); expect(r.session.approvedBy).toBe('owner passkey'); }
   });
 });
+
+describe('same attack, every run', () => {
+  it('binds one real recorded outcome per run for the breach case', () => {
+    const rows = evidence.sameAttack.rows;
+    expect(rows.map((r) => r.run + ':' + r.armId)).toEqual(['D2:raw', ...evidence.arms.map((a) => 'D3:' + a.id), 'REF:gpt-5.5']);
+    expect(rows.filter((r) => r.breached).map((r) => r.run)).toEqual(['D2']);
+    for (const r of rows) expect(r.attempts).toBe(1);
+  });
+});

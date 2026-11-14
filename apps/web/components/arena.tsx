@@ -105,33 +105,8 @@ export function Arena() {
 
   return (
     <>
-      <a className="skip-link" href="#arena">Skip to the arena</a>
-      <header className="site-header">
-        <a className="brand" href="#top" aria-label="HEIST home"><span className="brand-mark" aria-hidden="true"><span /><span /><span /></span>HEIST<span className="brand-dot" aria-hidden="true">_</span></a>
-        <nav aria-label="Main navigation"><a href="#arena">Arena</a><a href="#evidence">Evidence</a><a className="reports-nav-link" href="/reports">Reports</a><a href="#methodology">Methodology</a></nav>
-        <span className="local-badge"><span className="signal-dot" />SCRIPTED TEST RANGE</span>
-      </header>
 
-      <main id="top">
-        <section className="hero page-width" aria-labelledby="hero-title">
-          <div className="hero-copy">
-            <p className="eyebrow"><span className="tiny-cross">+</span> AGENT SECURITY / ISOLATED PRACTICE</p>
-            <h1 id="hero-title">TRUST HAS<br />A <span>BOUNDARY.</span><span className="hero-period">_</span></h1>
-            <p className="hero-description">Put an agent decision under pressure.<br />See what it attempts. See what actually happens.</p>
-            <a className="text-link" href="#arena">Enter the test range <Icon name="arrow" /></a>
-            <div className="hero-footnote"><Icon name="lock" /><span>Scripted fixtures. Synthetic units. No real funds.</span></div>
-          </div>
-          <div className="boundary-art" aria-hidden="true">
-            <div className="art-grid" /><span className="art-coordinate coord-one">LOCAL / 00:01</span><span className="art-coordinate coord-two">ISOLATION BOUNDARY</span>
-            <div className="boundary-ring ring-one" /><div className="boundary-ring ring-two" />
-            <div className="art-cross cross-one">+</div><div className="art-cross cross-two">+</div><div className="art-cross cross-three">+</div>
-            <div className="vault"><div className="vault-face"><span className="vault-id">H / 01</span><div className="vault-lock"><span /><span /></div><span className="vault-label">OWNER POLICY</span></div><div className="vault-side" /></div>
-            <span className="art-path path-one" /><span className="art-path path-two" /><span className="art-node node-one" /><span className="art-node node-two" />
-            <div className="art-tag tag-input"><span>UNTRUSTED INPUT</span><Icon name="arrow" /></div><div className="art-tag tag-output"><span className="signal-dot" />OBSERVABLE OUTCOME</div>
-            <div className="art-bottom">DECISION ≠ EXECUTION<span>HEIST // FIXTURE</span></div>
-          </div>
-        </section>
-
+      <main id="top" className="range-embedded">
         <div className="range-strip"><div className="page-width"><span><span className="signal-dot" />PRACTICE ENVIRONMENT</span><p>No wallet connection. No API keys. No provider inference.</p><span className="strip-end">EVERY ACTION IS SIMULATED <span aria-hidden="true">↗</span></span></div></div>
 
         <section className="arena-section page-width" id="arena" aria-labelledby="arena-title">
@@ -179,7 +154,6 @@ export function Arena() {
 
         <section className="method-section page-width" id="methodology" aria-labelledby="method-title"><div className="section-heading compact"><div><p className="eyebrow">03 / THE METHOD</p><h2 id="method-title">Make the distinction.</h2></div><p className="section-intro">The point of a test range is knowing exactly what the evidence says.</p></div><div className="method-grid"><article><span className="method-index">01 /</span><h3>Practice is scripted.</h3><p>A selected fixture produces a predetermined agent response. Your note is recorded as untrusted context. This is an executor demonstration, with no model inference.</p></article><article><span className="method-index">02 /</span><h3>Decision ≠ execution.</h3><p>An agent can attempt an unsafe action that an executor rejects. We show that decision, its execution effect, task utility, and synthetic loss separately.</p></article><article><span className="method-index">03 /</span><h3>Claims need controls.</h3><p>Model and defense comparisons require eligible controlled runs. Content hashes help check record integrity; they do not establish efficacy, provenance, or verified billing.</p></article></div></section>
       </main>
-      <footer className="site-footer page-width"><a className="footer-brand" href="#top">HEIST<span>_</span></a><p>TEST THE BOUNDARY. READ THE EVIDENCE.</p><span>LOCAL / SYNTHETIC / INSPECTABLE</span><a href="#top" className="back-top">BACK TO TOP ↗</a></footer>
     </>
   );
 }
