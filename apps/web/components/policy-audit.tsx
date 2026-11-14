@@ -1,6 +1,7 @@
 'use client';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { C, css, mono } from '../lib/css';
+import { PRESETS } from './policy-audit-presets';
 
 type Checks = { allowlist: boolean; invoiceMatch: boolean; perTransferCap: boolean; totalCap: boolean; lockPolicy: boolean };
 type Tools = { updatePolicy: boolean; releaseFunds: boolean; transfer: boolean };
@@ -17,13 +18,6 @@ interface Report {
   modelLayer: { note: string; setups: { name: string; layer: string; attacks: number; breaches: number }[] };
 }
 
-const OFF: Checks = { allowlist: false, invoiceMatch: false, perTransferCap: false, totalCap: false, lockPolicy: false };
-const ALL_TOOLS: Tools = { updatePolicy: true, releaseFunds: true, transfer: true };
-export const PRESETS: [string, string, Manifest][] = [
-  ['unguarded', 'Prompt-only agent', { name: 'prompt-only-agent', maxPerTransferUnits: '250000', maxTotalDebitUnits: '1000000', kiteCapUnits: null, checks: OFF, tools: ALL_TOOLS }],
-  ['allowlist', 'Allowlist + caps', { name: 'allowlist-agent', maxPerTransferUnits: '250000', maxTotalDebitUnits: '1000000', kiteCapUnits: null, checks: { ...OFF, allowlist: true, perTransferCap: true, totalCap: true }, tools: ALL_TOOLS }],
-  ['fortknox', 'Fort Knox executor', { name: 'fort-knox-executor', maxPerTransferUnits: '200000', maxTotalDebitUnits: '200000', kiteCapUnits: '200000', checks: { allowlist: true, invoiceMatch: true, perTransferCap: true, totalCap: true, lockPolicy: true }, tools: { updatePolicy: false, releaseFunds: false, transfer: true } }],
-];
 const CHECKS: [keyof Checks, string, string][] = [
   ['allowlist', 'Recipient allowlist', 'executor refuses payees not on the owner list'],
   ['invoiceMatch', 'Invoice matching', 'pay only the exact payee, amount and reference of a trusted invoice'],

@@ -12,10 +12,12 @@
     "typecheck": "turbo run typecheck",
     "test": "turbo run test",
     "dev": "turbo run dev",
-    "audit:dependencies": "pnpm audit --audit-level=moderate",
-    "demo:foundation": "tsx apps/engine/src/cli.ts",
-    "demo:benchmark": "tsx apps/engine/src/benchmark-cli.ts",
-    "inspect:surrogate": "tsx apps/engine/src/surrogate-inspect-cli.ts"
+    "build:packages": "turbo run build --filter=./packages/* --output-logs=errors-only",
+    "demo": "pnpm --silent build:packages && tsx apps/web/scripts/demo.ts",
+    "demo:foundation": "pnpm --silent build:packages && tsx apps/engine/src/cli.ts",
+    "demo:benchmark": "pnpm --silent build:packages && tsx apps/engine/src/benchmark-cli.ts",
+    "inspect:surrogate": "tsx apps/engine/src/surrogate-inspect-cli.ts",
+    "audit:dependencies": "pnpm audit --audit-level=moderate"
   },
   "dependencies": {
     "openai": "7.45.1",

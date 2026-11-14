@@ -36,3 +36,9 @@ next-env.d.ts
 
 .vercel
 .env*
+
+# Internal-facing material (kept locally, not published)
+designs/
+HACKATHON.md
+PARTNERS.md
+apps/web/AGENTS.md
