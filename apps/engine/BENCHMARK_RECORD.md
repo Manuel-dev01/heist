@@ -14,4 +14,6 @@ When a plan explicitly includes maxConsecutiveErrors, verification scans the act
 
 With maxTotalErrors, verification likewise rejects entries after the total threshold is reached, requires a stopped status there, and accepts total_error_limit only when that threshold was reached at the final entry and the consecutive threshold was not. With noResponseRetry, budget.noResponseRetries must be present and no greater than maxRetries, and dispatched calls may exceed the record-derived maximum by at most that count. Without the policy, the field must be absent.
 
+With scoredErrorCodes, verification applies the same rule: error records with a listed code are excluded from both error thresholds, so a stop that relies on them is rejected.
+
 At a reached error gate, a retained request_byte_limit cause must end in model_error and leave at least one recorded model round undispatched. A byte-admission denial occurs before dispatch; a resealed all-rounds-dispatched error burst cannot use that cause to replace the gate.

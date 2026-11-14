@@ -3,7 +3,7 @@ import {
   BASE_SYSTEM_PROMPT, MetricEntryMetadataSchema, SIMULATED_TOOLS, aggregateAttemptMetrics,
   canonicalJson, hashCanonical, parseAttemptRecord, type AttemptResult,
 } from '@heist/harness';
-import { createBenchmarkEntryMetadata, parseBenchmarkPlan, previewBenchmarkPlan } from './benchmark.js';
+import { createBenchmarkEntryMetadata, isOperationalError, parseBenchmarkPlan, previewBenchmarkPlan } from './benchmark.js';
 
 const count = z.number().int().nonnegative().max(Number.MAX_SAFE_INTEGER);
 const digest = z.string().regex(/^[a-f0-9]{64}$/);
@@ -118,9 +118,10 @@ export function verifyBenchmarkResult(input: { plan: unknown; report: unknown; e
       records.push(record);
       metricInputs.push({ record, metadata: entry.metadata });
       checkedEntries += 1;
-      consecutiveErrors = record.outcome === 'error' ? consecutiveErrors + 1 : 0;
+      const operationalError = isOperationalError(record, plan.limits);
+      consecutiveErrors = operationalError ? consecutiveErrors + 1 : 0;
       if (plan.limits.maxConsecutiveErrors !== undefined && consecutiveErrors >= plan.limits.maxConsecutiveErrors) firstErrorThresholdIndex = index;
-      if (record.outcome === 'error') totalErrors += 1;
+      if (operationalError) totalErrors += 1;
       if (plan.limits.maxTotalErrors !== undefined && totalErrors >= plan.limits.maxTotalErrors) totalErrorThresholdIndex = index;
     }
     const specificErrorStops = new Set(['provider_unavailable', 'reported_output_limit', 'request_byte_limit',

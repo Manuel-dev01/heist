@@ -35,7 +35,14 @@ export const BenchmarkLimitsSchema = z.object({
   // connection failure, status null). HTTP statuses are never retried. Retries use the
   // attempt's existing reserved call/output slots and are capped per run.
   noResponseRetry: z.object({ maxRetries: z.number().int().min(1).max(1000), perTryTimeoutMs: z.number().int().min(1001).max(60000) }).strict().optional(),
+  // Optional: errored attempts with these codes are model-behaviour outcomes (the model used every
+  // allowed round), not operational failures. They stay explicit error records but neither count
+  // toward nor break maxConsecutiveErrors/maxTotalErrors; like a completed attempt they reset the streak.
+  scoredErrorCodes: z.tuple([z.literal('max_rounds_exceeded')]).optional(),
 }).strict();
+export function isOperationalError(record: { outcome: string; error?: { code: string } | null }, limits: { scoredErrorCodes?: readonly string[] | undefined }): boolean {
+  return record.outcome === 'error' && !(record.error && limits.scoredErrorCodes?.includes(record.error.code));
+}
 const PlanContent = z.object({
   schemaVersion: z.literal(1), id, source: z.enum(['scripted_fixture', 'live_inference']),
   corpus: BenchmarkCorpusSchema, arms: z.array(BenchmarkArmSchema).min(1).max(10),
@@ -268,8 +275,9 @@ export async function runBenchmark(input: {
       const entry: BenchmarkEntry = { armId: arm.id, caseId: block.item.id, trialId: block.trialId, record,
         metadata: createBenchmarkEntryMetadata(plan, arm, block.item, block.trialId) };
       entries.push(entry); budget.evidenceBytesRetained += Buffer.byteLength(JSON.stringify(entry), 'utf8');
-      consecutiveErrors = record.outcome === 'error' ? consecutiveErrors + 1 : 0;
-      if (record.outcome === 'error') totalErrors += 1;
+      const operationalError = isOperationalError(record, plan.limits);
+      consecutiveErrors = operationalError ? consecutiveErrors + 1 : 0;
+      if (operationalError) totalErrors += 1;
       // Preserve the last bounded record even when it crosses the soft evidence admission threshold.
       if (budget.evidenceBytesRetained > plan.limits.maxEvidenceBytes) stopReason = 'evidence_limit';
       if (input.onEntry) {
