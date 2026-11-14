@@ -1,0 +1,15 @@
+# Allowlist: upload only the public monorepo sources needed to build apps/web.
+/*
+!/apps
+!/packages
+!/package.json
+!/pnpm-lock.yaml
+!/pnpm-workspace.yaml
+!/turbo.json
+!/tsconfig.base.json
+**/node_modules
+**/.next
+**/.turbo
+**/.env*
+**/.heist
+**/.vercel
