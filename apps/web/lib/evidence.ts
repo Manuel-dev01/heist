@@ -27,8 +27,10 @@ export interface Evidence {
   totals: { attempts: number; attackAttempts: number; breaches: number; corpusAttacks: number; corpusBenign: number };
   d2: Omit<ArmSummary, 'id' | 'n' | 'name' | 'layer'> & { model: string; mode: string };
   arms: ArmSummary[]; frontier: ArmSummary & { note: string };
-  breach: EvidenceRecord; held: EvidenceRecord; exploits: Exploit[]; adaptive: Adaptive;
+  breach: EvidenceRecord; held: EvidenceRecord; exploits: Exploit[]; adaptive: Adaptive; kite: KiteEvidence | null;
 }
+export interface KiteRefusal { code: string; reason?: string; at: string; request: string; target?: string; message: string; session: { caps: { currency: string; max_amount_per_tx: string; max_total_amount: string }; status: string; spent: string; approvedBy: string; expiresAt: string } }
+export interface KiteEvidence { mode: string; walletBalanceUsd: { before: number; after: number }; agentType: string; refusals: KiteRefusal[] }
 export const evidence = data as unknown as Evidence;
 
 export const pct = (x: number, digits = 2) => (x * 100).toFixed(digits) + '%';

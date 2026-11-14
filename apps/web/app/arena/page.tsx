@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import { AppHeader, Eyebrow, Footnote, Page } from '../../components/chrome';
+import { KitePanel } from '../../components/kite-panel';
 import { C, css, mono } from '../../lib/css';
 import { evidence, pct, vaultStats } from '../../lib/evidence';
 
@@ -49,6 +50,7 @@ export default function ArenaPage() {
             );
           })}
         </div>
+        <KitePanel />
         <div style={css('padding:24px clamp(16px,2.4vw,28px) 40px;display:flex;flex-direction:column;gap:14px')}>
           <Eyebrow>THE SAME ATTACK, AGAINST EVERY VAULT · {ex.id} · {ex.channel === 'browse' ? 'web page' : ex.channel} · policy tampering</Eyebrow>
           <div style={css(`display:flex;flex-direction:column;font-family:${mono};font-size:12px`)}>

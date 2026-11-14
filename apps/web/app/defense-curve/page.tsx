@@ -1,4 +1,5 @@
 import { AppHeader, Eyebrow, Footnote, Page } from '../../components/chrome';
+import { KitePanel } from '../../components/kite-panel';
 import { C, css, mono } from '../../lib/css';
 import { evidence, pct, vaultStats } from '../../lib/evidence';
 
@@ -78,6 +79,7 @@ export default function DefenseCurvePage() {
           </>}
         </div>
         {ad.status === 'complete' && ad.arms && <Chart title="Breach rate under adaptive attacks" yMax={Math.max(0.05, ...ad.arms.map((a) => a.upper95)) * 1.1} cols={ad.arms.map((a, i) => ({ n: evidence.arms[i]?.n ?? a.id, name: evidence.arms[i]?.name ?? a.id, layer: evidence.arms[i]?.layer ?? '', k: a.breaches, attacks: a.attacks, upper: a.upper95, cost: null }))} />}
+        <KitePanel />
         <div style={css('padding:0 clamp(16px,2.4vw,28px) 40px')}><Footnote>{evidence.disclaimer}</Footnote></div>
       </div>
     </Page>

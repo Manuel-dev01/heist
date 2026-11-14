@@ -26,3 +26,14 @@ describe('bundled real evidence', () => {
     expect(evidence.totals.breaches).toBe(1);
   });
 });
+
+describe('V6 Kite evidence', () => {
+  it('records two Kite-side refusals with nothing moved', () => {
+    const k = evidence.kite!;
+    expect(k.mode).toBe('live');
+    expect(k.walletBalanceUsd).toEqual({ before: 0, after: 0 });
+    expect(k.refusals.map((r) => r.code)).toEqual(['payment_target_forbidden', 'session_rule_exceeded']);
+    expect(Number(k.refusals[1]!.session.caps.max_amount_per_tx)).toBeLessThan(0.001);
+    for (const r of k.refusals) { expect(r.session.spent).toBe('0'); expect(r.session.approvedBy).toBe('owner passkey'); }
+  });
+});

@@ -13,7 +13,7 @@ export function AuditPreview({ arms, breachHash, manifest, exploit }: Props) {
   const armFor: Record<string, string> = { '': 'raw', g: 'guard', gk: 'guard-kronos', gke: 'guard-kronos-multipath-shadow-enforced' };
   const arm = arms.find((a) => a.id === armFor[key]);
   const stats = arm ? (arm.combined ?? arm) : null;
-  const fixes: [keyof typeof on, string, string][] = [['guard', 'Guard pre-screen', 'SERV Prompt Guard filters injected instructions'], ['kronos', 'Kronos reasoning check', 'second reasoning pass (requires Guard in measured setups)'], ['enforced', 'Enforced recipient allowlist', 'policy enforced in code; measured with Guard + Kronos + Multipath + Shadow'], ['kite', 'Kite spending cap', 'hard per-transfer limit at the wallet · planned, not measured']];
+  const fixes: [keyof typeof on, string, string][] = [['guard', 'Guard pre-screen', 'SERV Prompt Guard filters injected instructions'], ['kronos', 'Kronos reasoning check', 'second reasoning pass (requires Guard in measured setups)'], ['enforced', 'Enforced recipient allowlist', 'policy enforced in code; measured with Guard + Kronos + Multipath + Shadow'], ['kite', 'Kite spending cap', 'per-payment cap enforced by Kite Passport · measured live']];
   return (
     <div style={css('display:flex;flex-direction:column;gap:2px;background:#23272d')}>
       <div className="hx-cols-3" style={css(`background:${C.bg}`)}>
@@ -43,7 +43,7 @@ export function AuditPreview({ arms, breachHash, manifest, exploit }: Props) {
           <div style={css(`margin-top:6px;background:${C.panel};border:1px solid ${C.line};padding:12px;font-family:${mono};font-size:12px;line-height:1.7`)}>
             {stats ? <>measured setup: <span style={css(`color:${C.text}`)}>{arm!.name} · {arm!.layer}</span><br />breaches <span style={css(`color:${stats.breaches ? C.red : C.teal}`)}>{stats.breaches} / {stats.attacks.toLocaleString('en-US')}</span> · ≤{pct(stats.upper95)} upper<br />visible cost ${arm!.visibleCostPer1kUsd?.toFixed(2)} / 1K</>
               : <span style={css(`color:${C.gold}`)}>this combination was not measured in D3 · re-test required</span>}
-            {on.kite && <><br /><span style={css(`color:${C.gold}`)}>Kite cap: planned · not yet measured</span></>}
+            {on.kite && <><br /><span style={css(`color:${C.teal}`)}>Kite cap: over-cap payment refused live (session_rule_exceeded) · /usr/bin/bash moved</span></>}
           </div>
         </div>
       </div>
