@@ -41,7 +41,7 @@ export function AdaptiveSummaryInspector() {
     <a className="skip-link" href="#adaptive-inspector">Skip to adaptive summary inspection</a>
     <header className="site-header">
       <a className="brand" href="/" aria-label="HEIST home"><span className="brand-mark" aria-hidden="true"><span /><span /><span /></span>HEIST<span className="brand-dot" aria-hidden="true">_</span></a>
-      <nav aria-label="Main navigation"><a href="/#arena">Arena</a><a href="/reports">Reports</a><a href="/reports/adaptive" aria-current="page">Adaptive</a></nav>
+      <nav aria-label="Main navigation"><a href="/arena">Arena</a><a href="/range">Range</a><a href="/reports">Reports</a><a href="/reports/adaptive" aria-current="page">Adaptive</a></nav>
       <span className="local-badge"><span className="signal-dot" />LOCAL FILE INSPECTION</span>
     </header>
     <main className="page-width" id="adaptive-inspector">

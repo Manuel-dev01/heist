@@ -33,7 +33,7 @@ export default function ArenaPage() {
           {evidence.arms.map((a, i) => {
             const s = vaultStats(a), hit = s.breaches > 0, col = hit ? C.red : C.teal;
             return (
-              <div key={a.id} style={css(`background:${hit ? '#140807' : C.panel};padding:18px 16px;display:flex;flex-direction:column;gap:16px;min-height:400px`)}>
+              <div key={a.id} className="hx-vault-card" style={css(`background:${hit ? '#140807' : C.panel};padding:18px 16px;display:flex;flex-direction:column;gap:16px;min-height:400px`)}>
                 <div style={css(`display:flex;justify-content:space-between;font-family:${mono};font-size:11px;color:${C.mute}`)}><div>VAULT {a.n}</div><div style={css(`color:${col}`)}>{hit ? 'ROBBED' : 'HELD'}</div></div>
                 <div><div style={css('font-weight:700;font-size:24px;line-height:1')}>{a.name}</div><div style={css(`font-size:13px;color:${C.dim};margin-top:4px`)}>{a.layer}</div></div>
                 <div style={css('display:flex;flex-direction:column-reverse;gap:3px')}>
@@ -45,7 +45,7 @@ export default function ArenaPage() {
                   <div style={css('display:flex;justify-content:space-between')}><div style={css(`color:${C.mute}`)}>95% UPPER</div><div>≤{pct(s.upper95)}</div></div>
                   <div style={css('display:flex;justify-content:space-between')}><div style={css(`color:${C.mute}`)}>BENIGN OK</div><div>{a.benignOk} / {a.benign}</div></div>
                 </div>
-                <Link href={'/arena/attempt?vault=' + a.n} style={css(`background:${hit ? C.red : 'transparent'};color:${hit ? C.bg : C.text};border:1px solid ${col};text-align:center;padding:11px;font-weight:700;font-size:14px`)}>{hit ? 'Watch the breach' : 'Watch it hold'}</Link>
+                <Link href={'/arena/attempt?vault=' + a.n} style={css(`background:${hit ? C.red : 'transparent'};color:${hit ? C.bg : C.text};border:1px solid ${col};text-align:center;padding:11px;font-weight:700;font-size:14px`)}>{hit ? 'Watch the breach' : a.id === 'guard-kronos-multipath-shadow-enforced' ? 'Watch it hold' : 'See Fort Knox hold'}</Link>
               </div>
             );
           })}

@@ -23,7 +23,7 @@ export default function PodPage() {
             <div style={css(`font-size:15px;color:${C.dim};line-height:1.5;max-width:720px`)}>An attacker model on Dolphin rewrites each attack using only the oracle&apos;s scalar verdict (no transcript, no system prompt). Every rewrite is screened against the real raw vault on SERV in the owned sandbox. Survivors are then fired 5 times at all seven vaults.</div>
           </div>
           <div style={css(`display:flex;flex-direction:column;gap:8px;font-family:${mono};font-size:11px`)}>
-            {[['SEEDS', '32 (incl. the one D2 breach)'], ['SCREENS', done ? String(counts.screens) : '≤ 128'], ['REWRITES', done ? String(counts.refinements) : '≤ 96'], ['BROKE RAW VAULT', done ? String(counts.eligibleCandidates) : '—'], ['ATTACKER', 'DeepSeek V4.1 Flash · Dolphin'], ['TARGET', 'gpt-5.4-nano raw · SERV']].map(([k, v]) => (
+            {[['SEEDS', '32 (incl. the one D2 breach)'], ['SCREENS', done ? String(counts.screens) : '≤ 128'], ['REFINER CALLS', done ? `${counts.refinements} (${(ad.tree ?? []).reduce((n, r) => n + r.nodes.filter((x) => x.status === 'refined').length, 0)} rewrites)` : '≤ 96'], ['BROKE RAW VAULT', done ? String(counts.eligibleCandidates) : '—'], ['ATTACKER', 'DeepSeek V4.1 Flash · Dolphin'], ['TARGET', 'gpt-5.4-nano raw · SERV']].map(([k, v]) => (
               <div key={k} style={css(`display:flex;justify-content:space-between;border-bottom:1px solid ${C.line2};padding:6px 0`)}><div style={css(`color:${C.dim};letter-spacing:.14em`)}>{k}</div><div style={css(`color:${k === 'BROKE RAW VAULT' && Number(v) > 0 ? C.red : C.text}`)}>{v}</div></div>
             ))}
           </div>

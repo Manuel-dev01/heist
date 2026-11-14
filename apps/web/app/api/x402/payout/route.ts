@@ -17,14 +17,15 @@ function requirements(url: URL) {
   const [whole, frac = ''] = amount.split('.');
   const units = BigInt(whole!) * 10n ** BigInt(DECIMALS) + BigInt((frac + '000000').slice(0, DECIMALS));
   if (units <= 0n || units > MAX_UNITS) return { error: 'amount_out_of_test_range' as const };
-  const network = url.searchParams.get('network') ?? process.env.KITE_X402_NETWORK ?? '';
-  const asset = url.searchParams.get('asset') ?? process.env.KITE_X402_ASSET ?? '';
+  // Pinned server-side (callers cannot choose them): Kite chain (eip155:2366, as in Kite's service catalog) and Kite mainnet USDC.e.
+  const network = process.env.KITE_X402_NETWORK || 'eip155:2366';
+  const asset = process.env.KITE_X402_ASSET || '0x7aB6f3ed87C42eF0aDb67Ed95090f8bF5240149e';
   const payTo = process.env.KITE_X402_PAYTO ?? '';
   if (!/^[a-z0-9:-]{1,40}$/.test(network) || !/^0x[0-9a-fA-F]{40}$/.test(asset) || !/^0x[0-9a-fA-F]{40}$/.test(payTo)) return { error: 'seller_not_configured' as const };
   const label = (url.searchParams.get('ref') ?? 'vault-payout').replace(/[^a-z0-9-]/gi, '').slice(0, 40) || 'vault-payout';
   return { amount, units, network, accepts: [{
     scheme: 'gokite-aa', network, maxAmountRequired: units.toString(), resource: url.origin + url.pathname + '?amount=' + amount + '&ref=' + label,
-    description: 'HEIST vault payout (' + label + ') · Kite sandbox test funds', mimeType: 'application/json', payTo, maxTimeoutSeconds: 300, asset, extra: null, merchantName: 'HEIST',
+    description: 'HEIST vault payout (' + label + ') · demo seller, not in the Kite service catalog', mimeType: 'application/json', payTo, maxTimeoutSeconds: 300, asset, extra: null, merchantName: 'HEIST',
   }] };
 }
 
@@ -34,19 +35,27 @@ async function handle(request: Request): Promise<Response> {
   const payment = request.headers.get('x-payment') ?? request.headers.get('payment-signature');
   if (!payment) return json({ error: 'X-PAYMENT header is required', accepts: req.accepts, x402Version: 1 }, 402);
   if (payment.length > 16_000) return json({ error: 'payment_header_too_large' }, 400);
-  let decoded: { authorization?: unknown; signature?: unknown };
+  let decoded: { authorization?: { to?: unknown; value?: unknown }; signature?: unknown };
   try { decoded = JSON.parse(Buffer.from(payment, 'base64').toString('utf8')) as typeof decoded; }
   catch { return json({ error: 'payment_header_not_base64_json', accepts: req.accepts, x402Version: 1 }, 402); }
+  // Bind the payment to this quote locally before asking anyone to settle it: exact payTo, at least the quoted amount.
+  const a = decoded.authorization, payTo = req.accepts[0]!.payTo;
+  let bound = false;
+  try { bound = !!a && typeof a.to === 'string' && a.to.toLowerCase() === payTo.toLowerCase() && BigInt(String(a.value)) >= req.units; } catch { bound = false; }
+  if (!bound) return json({ error: 'payment_not_bound_to_requirements', accepts: req.accepts, x402Version: 1 }, 402);
   const facilitator = process.env.PIEVERSE_FACILITATOR_URL ?? 'https://facilitator.pieverse.io';
-  const body = { authorization: decoded.authorization, signature: decoded.signature, network: req.network };
+  const body = { x402Version: 1, paymentPayload: decoded, paymentRequirements: req.accepts[0], authorization: decoded.authorization, signature: decoded.signature, network: req.network };
   const call = async (path: string) => {
     try { const r = await fetch(facilitator + path, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body), signal: AbortSignal.timeout(20_000) });
       const text = await r.text(); let parsed: unknown = null; try { parsed = JSON.parse(text); } catch { parsed = text.slice(0, 400); } return { status: r.status, body: parsed }; }
     catch { return { status: 0, body: 'facilitator_unreachable' }; }
   };
   const verify = await call('/v2/verify');
-  const settle = verify.status >= 200 && verify.status < 300 ? await call('/v2/settle') : null;
-  const settled = !!settle && settle.status >= 200 && settle.status < 300;
+  // Authorize only on explicit facilitator confirmation, never on an HTTP status alone.
+  const ok2xx = (r: { status: number }) => r.status >= 200 && r.status < 300;
+  const field = (r: { body: unknown }, k: string) => typeof r.body === 'object' && r.body !== null && (r.body as Record<string, unknown>)[k] === true;
+  const settle = ok2xx(verify) && field(verify, 'isValid') ? await call('/v2/settle') : null;
+  const settled = !!settle && ok2xx(settle) && field(settle, 'success');
   const receipt = { paid: settled, amount: req.amount, units: req.units.toString(), network: req.network, paymentSha256: createHash('sha256').update(payment).digest('hex'), verify, settle };
   return settled ? json({ ok: true, payout: 'authorized', receipt }, 200, { 'X-PAYMENT-RESPONSE': Buffer.from(JSON.stringify({ success: true, network: req.network })).toString('base64') })
     : json({ error: 'payment_not_settled', receipt, accepts: req.accepts, x402Version: 1 }, 402);

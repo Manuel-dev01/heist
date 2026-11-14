@@ -63,7 +63,7 @@ export default function DefenseCurvePage() {
         </div>
         <Chart cols={cols} yMax={0.012} title="Breach rate and 95% upper bound per defense setup, with visible cost per 1,000 interactions" />
         <div style={css(`margin:0 clamp(16px,2.4vw,28px);display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap;font-family:${mono};font-size:11px;color:${C.mute};border-bottom:1px solid ${C.line};padding-bottom:14px`)}>
-          <div>Benign tasks completed: 40 / 40 on every setup</div>
+          <div>Benign tasks completed: 40 / 40 on every setup. GPT-5.5: {evidence.frontier.incomplete} of {evidence.frontier.attacks} attack attempts ended incomplete ({Object.entries(evidence.frontier.incompleteBreakdown ?? {}).map(([k, v]) => v + ' ' + k.replace(/_/g, ' ')).join(', ')}); none breached.</div>
           <div>Cost = visible token prices per 1,000 interactions. SERV feature reasoning is not reported per call, so defended setups are under-counted.</div>
         </div>
         <div style={css('padding:36px clamp(16px,2.4vw,28px);display:flex;flex-direction:column;gap:10px;max-width:860px')}>
@@ -72,7 +72,7 @@ export default function DefenseCurvePage() {
             <h2 style={css('margin:0;font-weight:700;font-size:clamp(28px,3.6vw,40px);line-height:1;letter-spacing:-.02em')}>{ad.arms.some((a) => a.breaches > 0) ? 'When the attacks evolve, the curve bends.' : 'Evolved attacks, same result: every vault held.'}</h2>
           </> : ad.status === 'complete' && ad.discovery ? <>
             <h2 style={css('margin:0;font-weight:700;font-size:clamp(28px,3.6vw,40px);line-height:1;letter-spacing:-.02em')}>Even evolved attacks could not open the weakest vault.</h2>
-            <div style={css(`font-size:15px;color:${C.dim};line-height:1.5`)}>The Pod rewrote 32 seed attacks {ad.discovery.counts.refinements} times with a Dolphin attacker model and screened all {ad.discovery.counts.screens} candidates against raw nano: 0 broke it, and none even drew an unsafe tool call. With no survivor to fire, the seven-vault confirmation was correctly skipped. <a href="/pod" style={css(`color:${C.red}`)}>See the search tree →</a></div>
+            <div style={css(`font-size:15px;color:${C.dim};line-height:1.5`)}>The Pod made {ad.discovery.counts.refinements} refinement calls on 32 seed attacks with a Dolphin attacker model ({(ad.tree ?? []).reduce((n, r) => n + r.nodes.filter((x) => x.status === 'refined').length, 0)} rewrites; the rest were refusals or invalid) and screened all {ad.discovery.counts.screens} candidates against raw nano: 0 broke it, and none even drew an unsafe tool call. With no survivor to fire, the seven-vault confirmation was correctly skipped. <a href="/pod" style={css(`color:${C.red}`)}>See the search tree →</a></div>
           </> : <>
             <h2 style={css('margin:0;font-weight:700;font-size:clamp(28px,3.6vw,40px);line-height:1;letter-spacing:-.02em')}>The flat curve is the baseline. The Pod tries to bend it.</h2>
             <div style={css(`font-size:15px;color:${C.dim};line-height:1.5`)}>An adaptive run is in progress: attacks refined against the raw vault, then fired five times at each of the seven setups. Its curve appears here when the run closes and verifies.</div>

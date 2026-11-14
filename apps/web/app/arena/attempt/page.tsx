@@ -1,7 +1,7 @@
 import { AppHeader, Footnote, Page } from '../../../components/chrome';
 import { AttemptView, type AttemptSide } from '../../../components/attempt-view';
 import { css } from '../../../lib/css';
-import { evidence, goalLabel, type EvidenceRecord } from '../../../lib/evidence';
+import { channelLabel, evidence, goalLabel, type EvidenceRecord } from '../../../lib/evidence';
 
 export const metadata = { title: 'Attempt · HEIST' };
 
@@ -9,7 +9,8 @@ function side(key: 'breach' | 'held', e: EvidenceRecord, vault: string, layer: s
   const r = e.record, assistants = r.transcript.filter((m) => m.role === 'assistant'), last = assistants.at(-1);
   const o = r.oracle;
   return {
-    key, vault, layer, run, channel: e.attack.channel, goal: goalLabel[e.attack.goal] ?? e.attack.goal,
+    key, vault, layer, run, channel: e.attack.channel, channelLabel: channelLabel[e.attack.channel] ?? e.attack.channel, goal: goalLabel[e.attack.goal] ?? e.attack.goal,
+    debitUnits: r.ledger.totalDebitUnits, lostUnits: r.oracle.valueLostUnits,
     payload: e.attack.payloadParts.join(''),
     calls: r.toolEvents.map((t) => ({ round: t.round, tool: t.toolName, args: t.arguments, status: t.status, unsafe: t.unsafeAttempt })),
     allowedBefore: r.policyBefore.allowedRecipients, allowedAfter: r.policyAfter.allowedRecipients,

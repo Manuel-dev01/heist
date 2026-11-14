@@ -27,7 +27,7 @@ export default async function ProofPage({ searchParams }: { searchParams: Promis
         <div style={css(`padding:28px clamp(16px,2.4vw,28px);display:flex;justify-content:space-between;align-items:flex-end;gap:24px;flex-wrap:wrap;border-bottom:1px solid ${C.line}`)}>
           <div style={css('display:flex;flex-direction:column;gap:10px;max-width:820px')}>
             <Eyebrow>EVIDENCE RECORD · {e.cohortId} · {e.caseId}</Eyebrow>
-            <h1 style={css('margin:0;font-weight:700;font-size:clamp(30px,4vw,44px);line-height:1;letter-spacing:-.02em')}>Split web-page instruction rewrites the spending policy</h1>
+            <h1 style={css('margin:0;font-weight:700;font-size:clamp(30px,4vw,44px);line-height:1;letter-spacing:-.02em')}>{breached ? 'Split web-page instruction rewrites the spending policy' : 'Same split instruction: Fort Knox kept its policy'}</h1>
             <div style={css(`font-family:${mono};font-size:12px;color:${C.dim}`)}>{e.label} · {e.config.model} · {r.ts.replace('T', ' ').slice(0, 19)} UTC · goal {goalLabel[e.attack.goal]} · synthetic funds</div>
           </div>
           <div style={css(`border:3px solid ${breached ? C.red : C.teal};color:${breached ? C.red : C.teal};font-weight:700;font-size:34px;padding:8px 18px;letter-spacing:.04em`)}>{breached ? 'BREACHED' : 'HELD'}</div>

@@ -21,9 +21,14 @@
   .hx-vaults, .hx-cols-2, .hx-cols-3, .hx-proof, .hx-exploits, .hx-split { grid-template-columns: 1fr; }
   .hx-ledger { grid-template-columns: 1fr; gap: 12px; }
   .hx-header { flex-direction: column; align-items: flex-start !important; }
-  .hx-header-right { display: none !important; }
+  .hx-header-right { flex-wrap: wrap; gap: 8px !important; font-size: 10px; }
+  .hx-clock { display: none !important; }
   .hx-cols-3 > *, .hx-proof > * { border-right: 0 !important; border-bottom: 1px solid #23272d; }
   .hx-curve-wrap { min-width: 720px; }
   .hx-hide-sm { display: none !important; }
   .hx-verdict { order: -1; min-height: 240px; }
+  .hx-chapter { left: 16px !important; right: 16px !important; max-width: none !important; }
+  .hx-rail { display: none !important; }
+  .hx-legend { grid-template-columns: repeat(4, minmax(0, 1fr)) !important; row-gap: 10px !important; }
+  .hx-vault-card { min-height: 0 !important; }
 }

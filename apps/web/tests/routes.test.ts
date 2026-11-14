@@ -32,8 +32,8 @@ describe('actual local route handlers', () => {
 
 describe('route admission precedes body parsing', () => {
   it.each([
-    { path: 'practice', route: practice, max: 30 },
-    { path: 'verify', route: verify, max: 60 },
+    { path: 'practice', route: practice, max: 240 },
+    { path: 'verify', route: verify, max: 480 },
   ])('charges malformed local JSON and rejects an unread $path body at its limit', async ({ path, route, max }) => {
     vi.useFakeTimers();
     vi.setSystemTime(new Date('2040-01-01T00:00:00.000Z'));

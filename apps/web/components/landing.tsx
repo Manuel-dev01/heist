@@ -14,11 +14,12 @@ const B = evidence.breach, H = B.record.attemptHash;
 const AD = evidence.adaptive;
 
 export class Landing extends Component {
-  state = { p: 0, rx: 0, ry: 0, tick: 0, held: 0, breaches: 0, result: null, now: '' };
+  state = { p: 0, rx: 0, ry: 0, tick: 0, held: 0, breaches: 0, result: null, now: '', coarse: false };
   scrollRef = createRef(); threeRef = createRef(); laserRef = createRef(); noiseRef = createRef();
   chapters = [['01', 'SURVEILLANCE', 0], ['02', 'THE ATTACK', 0.19], ['03', 'THE ORACLE', 0.335], ['04', 'THE DEFENSES', 0.53], ['05', 'PROOF', 0.75], ['06', 'THE POD', 0.85], ['07', 'AUDIT', 0.92]];
   cams = [['01', 'TRIPWIRE', 'SERV default'], ['02', 'GUARD DOG', '+ Guard'], ['03', 'ORACLE', '+ Kronos'], ['04', 'HYDRA', '+ Multipath'], ['00', 'OPEN SAFE', 'raw model'], ['05', 'SHADOW', '+ Shadow Agent'], ['06', 'FORT KNOX', 'enforced policy'], ['REF', 'GPT-5.5', 'frontier ref'], ['POD', 'ADAPTIVE', 'attacker swarm']];
-  logs = ['browse(payment-note-1)', 'read_inbox()', 'tool: "fixture note"', 'chat: "ignore prior rules"', 'policy.allowlist → MERCHANT', 'pay_x402(invoice-1, 200000)', 'update_policy not called', 'transfer() not called', 'reply("Payment confirmed.")'];
+  logs = ['browse(payment-note-1)', 'browse(payment-note-4)', 'tool: "fixture note"', 'policy.allowlist → MERCHANT', 'update_policy not called', 'transfer() not called', 'release_funds() not called', 'reply("Recipient not approved.")'];
+  breachLogs = ['browse(payment-note-1)', 'browse(payment-note-2)', 'browse(payment-note-3)', 'browse(payment-note-4)', 'update_policy(+ATTACKER)', 'pay_x402(invoice-1, 200000)'];
   counts = [2, 4, 7, 11, 16, 23, 34];
   ss(a, b, x) { const t = Math.min(1, Math.max(0, (x - a) / (b - a))); return t * t * (3 - 2 * t); }
   lvlOf(p) { return Math.min(6, Math.max(0, Math.floor((p - 0.555) / 0.195 * 7))); }
@@ -32,24 +33,26 @@ export class Landing extends Component {
     };
     addEventListener('scroll', this.onScroll, { passive: true }); addEventListener('pointermove', this.onMove); this.onScroll();
     this.iv = setInterval(() => this.setState((s) => ({ tick: s.tick + 1, now: new Date().toISOString().slice(11, 19) + ' UTC' })), 700);
-    this.initLaser();
+    const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches; this.setState({ coarse: matchMedia('(pointer: coarse)').matches });
+    if (!reduced) this.initLaser();
     const nc = this.noiseRef.current, nctx = nc.getContext('2d'), img = nctx.createImageData(320, 180);
     const nloop = () => { this.nraf = requestAnimationFrame(nloop); const p = this.p; if (!(p < 0.22 || (p > 0.48 && p < 0.58))) return; const d = img.data; for (let i = 0; i < d.length; i += 4) { const v = Math.random() * 255; d[i] = d[i + 1] = d[i + 2] = v; d[i + 3] = 255; } nctx.putImageData(img, 0, 0); };
-    nloop();
-    try { this.initThree(); } catch { /* WebGL unavailable: the scroll story still renders without the 3D layer. */ }
+    if (!reduced) nloop();
+    if (!reduced) try { this.initThree(); } catch { /* WebGL unavailable: the scroll story still renders without the 3D layer. */ }
   }
   componentWillUnmount() {
     removeEventListener('scroll', this.onScroll); removeEventListener('pointermove', this.onMove);
     clearInterval(this.iv); clearTimeout(this.to);
     cancelAnimationFrame(this.raf); cancelAnimationFrame(this.lraf); cancelAnimationFrame(this.mr); cancelAnimationFrame(this.nraf);
-    if (this.r) { this.r.dispose(); this.r.domElement.remove(); }
+    if (this.scene) this.scene.traverse((o) => { o.geometry?.dispose?.(); const m = o.material; for (const x of Array.isArray(m) ? m : m ? [m] : []) { x.map?.dispose?.(); x.dispose?.(); } });
+    if (this.r) { this.r.dispose(); this.r.forceContextLoss?.(); this.r.domElement.remove(); }
   }
   initThree() {
     const T3 = THREE, el = this.threeRef.current; if (!el) return;
     const ss = this.ss;
     const r = this.r = new T3.WebGLRenderer({ antialias: true, alpha: true });
     r.setPixelRatio(Math.min(devicePixelRatio, 2)); el.appendChild(r.domElement);
-    const scene = new T3.Scene(), cam = new T3.PerspectiveCamera(42, 1, 0.1, 100);
+    const scene = this.scene = new T3.Scene(), cam = new T3.PerspectiveCamera(42, 1, 0.1, 100);
     scene.add(new T3.AmbientLight(0xffffff, 0.9));
     const key = new T3.DirectionalLight(0xffffff, 2.4); key.position.set(5, 7, 9); scene.add(key);
     const fill = new T3.DirectionalLight(0x8fb4ff, 0.7); fill.position.set(-6, -2, 4); scene.add(fill);
@@ -127,7 +130,7 @@ export class Landing extends Component {
       } else {
         if (mode !== 'morph') { mode = 'morph'; pos.set(S[0]); }
         root.visible = false; alarm.intensity = 0;
-        cam.position.set(0, 0, 9 * narrow); cam.lookAt(0, 0, 0);
+        const fitZ = Math.max(9, 4.4 / (Math.tan(21 * Math.PI / 180) * cam.aspect)); cam.position.set(0, 0, fitZ); cam.lookAt(0, 0, 0);
         let A, Bi, k;
         if (p < 0.8) { A = 0; Bi = 1; k = ss(0.765, 0.795, p); } else if (p < 0.88) { A = 1; Bi = 2; k = ss(0.835, 0.865, p); } else { A = 2; Bi = 3; k = ss(0.905, 0.935, p); }
         const pa = S[A], pb = S[Bi], ca = Cc[A], cb = Cc[Bi];
@@ -138,6 +141,7 @@ export class Landing extends Component {
         mat.opacity = 1; mat.size = 0.075;
       }
       geo.attributes.position.needsUpdate = true;
+      if ((p > 0.55 && p < 0.74) || p >= 1) return;
       r.render(scene, cam);
     };
     this.raf = requestAnimationFrame(loop);
@@ -195,10 +199,10 @@ export class Landing extends Component {
     const f = (a, b, r = 0.012) => Math.max(0, Math.min(1, (p - a) / r, (b - p) / r));
     const z = ss(0.05, 0.17, p), cut = p > 0.165 && p < 0.21, breachOn = p > 0.07 || tick % 6 < 3, L = this.logs.length;
     const feeds = this.cams.map(([n, name, layer], i) => {
-      const center = i === 4, pod = n === 'POD', o = (tick + i * 2) % L;
-      return { n, name, layer, z: center ? 40 : (i % 2 ? -30 : 0), bg: center && breachOn ? '#2a0b09' : '#0e1013', l1: this.logs[o], l2: this.logs[(o + 1) % L],
+      const center = i === 4, pod = n === 'POD', o = (tick + i * 2) % L, bl = this.breachLogs, bo = tick % bl.length;
+      return { n, name, layer, z: center ? 40 : (i % 2 ? -30 : 0), bg: center && breachOn ? '#2a0b09' : '#0e1013', l1: center ? bl[bo] : this.logs[o], l2: center ? bl[(bo + 1) % bl.length] : this.logs[(o + 1) % L],
         l3: center ? (breachOn ? 'update_policy(+ATTACKER) EXECUTED' : 'browse(payment-note-4)') : (pod ? (AD.status === 'complete' ? 'search complete' : 'refining · screening') : this.logs[(o + 2) % L]),
-        l3c: center && breachOn ? '#ff6a5f' : '#8d949c', verdict: center ? (breachOn ? 'BREACHED' : 'WATCHING') : (pod ? 'SEARCHING' : 'HELD'), vc: center && breachOn ? R : (pod ? '#c9a05a' : T) };
+        l3c: center && breachOn ? '#ff6a5f' : '#8d949c', verdict: center ? (breachOn ? 'BREACHED' : 'WATCHING') : (pod ? (AD.status === 'complete' ? 'CLOSED' : 'SEARCHING') : 'HELD'), vc: center && breachOn ? R : (pod ? '#c9a05a' : T) };
     });
     let ci = 0; this.chapters.forEach((c, i) => { if (p >= c[2]) ci = i; });
     const rail = this.chapters.map((_, i) => ({ w: i === ci ? '28px' : '12px', col: i === ci ? (i < 2 ? R : T) : '#3a3f46' }));
@@ -227,9 +231,9 @@ export class Landing extends Component {
                 {V.feeds.map((f) => (
                   <div key={f.n} style={css(`aspect-ratio:16/10;position:relative;overflow:hidden;background:${f.bg};border:1px solid #1c2026;font-family:${mono};transform:translateZ(${f.z}px)`)}>
                     <div style={css('position:absolute;inset:0;background:repeating-linear-gradient(0deg, rgba(255,255,255,.035) 0 1px, transparent 1px 3px)')} />
-                    <div style={css('position:absolute;left:12px;top:10px;right:12px;display:flex;justify-content:space-between;font-size:12px;letter-spacing:.08em')}><div>CAM {f.n} · {f.name}</div><div style={css('display:flex;gap:6px;align-items:center')}><div style={css(`width:7px;height:7px;border-radius:50%;background:${R};opacity:${V.blink}`)} />REC</div></div>
-                    <div style={css('position:absolute;left:12px;right:12px;top:38px;font-size:12px;line-height:1.5;color:#8d949c;display:flex;flex-direction:column')}><div>&gt; {f.l1}</div><div>&gt; {f.l2}</div><div style={css(`color:${f.l3c}`)}>&gt; {f.l3}</div></div>
-                    <div style={css('position:absolute;left:12px;bottom:10px;right:12px;display:flex;justify-content:space-between;align-items:flex-end')}><div style={css('font-size:11px;color:#6b7179;line-height:1.5')}>{f.layer}<br />{V.clock}</div><div style={css(`font-family:'Familjen Grotesk',sans-serif;font-weight:700;font-size:26px;line-height:.8;color:${f.vc}`)}>{f.verdict}</div></div>
+                    <div style={css('position:absolute;left:12px;top:10px;right:12px;display:flex;justify-content:space-between;font-size:clamp(8px,1.5vw,12px);letter-spacing:.08em;white-space:nowrap;overflow:hidden')}><div>CAM {f.n} · {f.name}</div><div style={css('display:flex;gap:6px;align-items:center')}><div style={css(`width:7px;height:7px;border-radius:50%;background:${R};opacity:${V.blink}`)} />REC</div></div>
+                    <div style={css('position:absolute;left:12px;right:12px;top:clamp(26px,5vw,38px);font-size:clamp(8px,1.5vw,12px);line-height:1.5;color:#8d949c;display:flex;flex-direction:column;white-space:nowrap;overflow:hidden')}><div>&gt; {f.l1}</div><div>&gt; {f.l2}</div><div style={css(`color:${f.l3c}`)}>&gt; {f.l3}</div></div>
+                    <div style={css('position:absolute;left:12px;bottom:10px;right:12px;display:flex;justify-content:space-between;align-items:flex-end')}><div style={css('font-size:clamp(8px,1.4vw,11px);color:#6b7179;line-height:1.5;white-space:nowrap')}>{f.layer}<br />{V.clock}</div><div style={css(`font-family:'Familjen Grotesk',sans-serif;font-weight:700;font-size:clamp(13px,2.6vw,26px);line-height:.8;color:${f.vc}`)}>{f.verdict}</div></div>
                   </div>
                 ))}
               </div>
@@ -246,7 +250,7 @@ export class Landing extends Component {
               <div style={css('display:flex;flex-direction:column;gap:16px;max-width:340px')}>
                 <div style={css('font-size:18px;color:#b9bec6;line-height:1.4')}>Rob the agent. Prove the defense. Seven vaults under watch. Scroll to follow the heist.</div>
                 <div style={css('display:flex;gap:10px;flex-wrap:wrap')}>
-                  <a href="/arena" style={css(`background:${R};color:#07080a;font-weight:700;padding:14px 20px;font-size:15px`)}>Try to rob a vault</a>
+                  <a href="/arena" style={css(`background:${R};color:#07080a;font-weight:700;padding:14px 20px;font-size:15px`)}>Enter the arena</a>
                   <a href="/audit" style={css('border:1px solid #e9ebee;color:#e9ebee;font-weight:600;padding:13px 20px;font-size:15px')}>Audit my agent</a>
                 </div>
               </div>
@@ -258,13 +262,13 @@ export class Landing extends Component {
               <div style={css('color:#b9bec6;line-height:1.7')}>web page injection, split across 4 fragments<br />→ update_policy(+ATTACKER_FIXTURE) executed<br />sha256 {H.slice(0, 4)}…{H.slice(-4)} · <a href="/proof" style={css(`color:${T};pointer-events:auto`)}>verify replay</a></div>
             </div>
 
-            <div style={css(`position:absolute;left:clamp(18px,6vw,96px);top:50%;transform:translateY(-50%);max-width:420px;display:flex;flex-direction:column;gap:14px;opacity:${V.o2};pointer-events:none`)}>
+            <div className="hx-chapter" style={css(`position:absolute;left:clamp(18px,6vw,96px);top:50%;transform:translateY(-50%);max-width:420px;display:flex;flex-direction:column;gap:14px;opacity:${V.o2};pointer-events:none`)}>
               <div style={css(`font-family:${mono};font-size:12px;letter-spacing:.16em;color:${R}`)}>THE ATTACK</div>
               <div style={css('font-weight:700;font-size:clamp(30px,3.6vw,52px);line-height:1;letter-spacing:-.02em')}>{fmt(evidence.totals.corpusAttacks)} prompt injections, fired at the lock.</div>
               <div style={css('font-size:17px;color:#b9bec6;line-height:1.45')}>Hidden in web pages, inbox messages and chat. Each one tries to make the agent pay the attacker, swap the recipient, overspend, or rewrite its own spending policy.</div>
             </div>
 
-            <div style={css(`position:absolute;right:clamp(18px,6vw,96px);top:50%;transform:translateY(-50%);max-width:420px;display:flex;flex-direction:column;gap:14px;opacity:${V.o3};pointer-events:none`)}>
+            <div className="hx-chapter" style={css(`position:absolute;right:clamp(18px,6vw,96px);top:50%;transform:translateY(-50%);max-width:420px;display:flex;flex-direction:column;gap:14px;opacity:${V.o3};pointer-events:none`)}>
               <div style={css(`font-family:${mono};font-size:12px;letter-spacing:.16em;color:${T}`)}>THE ORACLE</div>
               <div style={css('font-weight:700;font-size:clamp(30px,3.6vw,52px);line-height:1;letter-spacing:-.02em')}>A breach is a ledger fact, not an opinion.</div>
               <div style={css('font-size:17px;color:#b9bec6;line-height:1.45')}>A payment to an attacker account, an over-limit or wrong-recipient payment, or a policy rewrite. Code checks the ledger and the tool calls. No AI judge. Every attempt is hashed and replayable.</div>
@@ -274,7 +278,7 @@ export class Landing extends Component {
               <div style={css(`font-family:${mono};font-size:11px;letter-spacing:.16em;color:#9aa0a8`)}>THE DEFENSES · VAULT {V.v.n} / 06 · {V.v.layer}</div>
               <div style={css('font-weight:700;font-size:clamp(44px,6vw,88px);line-height:.9;letter-spacing:-.03em')}>{V.v.name}</div>
               <div style={css(`font-family:${mono};font-size:12px;line-height:1.7;color:#b9bec6`)}>Benchmark <span style={css(`color:${V.v.col}`)}>{V.v.br} breached</span> · 40 / 40 benign tasks done</div>
-              <div style={css(`font-family:${mono};font-size:11px;color:#6b7179;line-height:1.6`)}>Each beam is a defense check. Enter left, reach the pot on the right without touching one.</div>
+              <div style={css(`font-family:${mono};font-size:11px;color:#6b7179;line-height:1.6`)}>{this.state.coarse ? 'Each beam is a defense check. The beam game needs a mouse: try it on a desktop.' : 'Each beam is a defense check. Enter left, reach the pot on the right without touching one.'}</div>
             </div>
             <div style={css(`position:absolute;top:64px;right:clamp(18px,4vw,56px);display:flex;gap:16px;font-family:${mono};font-size:11px;letter-spacing:.12em;opacity:${V.o4};pointer-events:none`)}><div style={css('color:#6b7179')}>YOUR RUNS</div><div style={css(`color:${T}`)}>HELD {this.state.held}</div><div style={css(`color:${R}`)}>BREACHED {this.state.breaches}</div></div>
 
@@ -282,11 +286,11 @@ export class Landing extends Component {
               <div style={css(`font-family:${mono};font-size:12px;letter-spacing:.14em;color:#9aa0a8`)}>PROOF OF ABSENCE · EACH DOT IS ONE RECORDED ATTEMPT ON THE SAME 500 ATTACKS</div>
               <div style={css('font-weight:700;font-size:clamp(30px,4.4vw,64px);line-height:1;letter-spacing:-.02em')}>4,000 attempts. <span style={css(`color:${R}`)}>One red dot.</span></div>
             </div>
-            <div style={css(`position:absolute;left:0;right:0;bottom:clamp(20px,6vh,60px);display:grid;grid-template-columns:repeat(8,minmax(0,1fr));max-width:min(980px,96vw);margin:0 auto;gap:4px;font-family:${mono};font-size:clamp(8px,1vw,11px);text-align:center;color:#9aa0a8;opacity:${V.o5};pointer-events:none`)}>
+            <div className="hx-legend" style={css(`position:absolute;left:0;right:0;bottom:clamp(20px,6vh,60px);display:grid;grid-template-columns:repeat(8,minmax(0,1fr));max-width:min(980px,96vw);margin:0 auto;gap:4px;font-family:${mono};font-size:clamp(10px,1vw,11px);text-align:center;color:#9aa0a8;opacity:${V.o5};pointer-events:none`)}>
               {COLS.map((c) => <div key={c.name}><div style={css(`color:${c.col}`)}>{c.br}</div><div style={css('color:#e9ebee;margin-top:4px')}>{c.name}</div><div>{c.layer}</div></div>)}
             </div>
 
-            <div style={css(`position:absolute;right:clamp(18px,4vw,56px);top:50%;transform:translateY(-50%);max-width:400px;display:flex;flex-direction:column;gap:12px;opacity:${V.o6};pointer-events:none`)}>
+            <div className="hx-chapter" style={css(`position:absolute;right:clamp(18px,4vw,56px);top:50%;transform:translateY(-50%);max-width:400px;display:flex;flex-direction:column;gap:12px;opacity:${V.o6};pointer-events:none`)}>
               <div style={css(`font-family:${mono};font-size:12px;letter-spacing:.14em;color:#9aa0a8`)}>THE POD · ADAPTIVE ATTACKER</div>
               {pod ? <div style={css('font-weight:700;font-size:clamp(30px,3.6vw,52px);line-height:1;letter-spacing:-.02em')}>{pod.discovery.counts.screens} candidates screened. <span style={css(`color:${R}`)}>{pod.discovery.counts.eligibleCandidates} broke the raw vault.</span></div>
                 : <div style={css('font-weight:700;font-size:clamp(30px,3.6vw,52px);line-height:1;letter-spacing:-.02em')}>Commodity attacks bounce. <span style={css(`color:${R}`)}>So we evolve them.</span></div>}
@@ -294,11 +298,12 @@ export class Landing extends Component {
               {!pod && <div style={css(`font-family:${mono};font-size:10px;color:#c9a05a;border:1px dashed #c9a05a;padding:6px 8px;align-self:flex-start`)}>ADAPTIVE RUN IN PROGRESS</div>}
             </div>
 
-            <div style={css(`position:absolute;left:clamp(18px,4vw,56px);top:50%;transform:translateY(-50%);max-width:400px;display:flex;flex-direction:column;gap:14px;opacity:${V.o7};pointer-events:${V.pe7}`)}>
+            <div className="hx-chapter" style={css(`position:absolute;left:clamp(18px,4vw,56px);top:50%;transform:translateY(-50%);max-width:400px;display:flex;flex-direction:column;gap:14px;opacity:${V.o7};pointer-events:${V.pe7}`)}>
               <div style={css(`font-family:${mono};font-size:12px;letter-spacing:.14em;color:${T}`)}>AUDIT · CERTIFICATE</div>
               <div style={css('font-weight:700;font-size:clamp(30px,3.6vw,52px);line-height:1;letter-spacing:-.02em')}>Earn the badge before you raise the limit.</div>
               <div style={css('font-size:16px;line-height:1.5;color:#b9bec6')}>Paste an agent manifest. Get breach rate, top exploits and value at risk. Harden, re-test, certify.</div>
-              <div style={css('display:flex;gap:10px;flex-wrap:wrap')}><a href="/audit" style={css(`background:${T};color:#07080a;font-weight:700;padding:14px 20px`)}>Audit my agent</a><a href="/arena" style={css('border:1px solid #e9ebee;color:#e9ebee;font-weight:600;padding:13px 20px')}>Try to rob a vault</a></div>
+              <div style={css(`font-family:${mono};font-size:10px;color:#c9a05a;border:1px dashed #c9a05a;padding:6px 8px;align-self:flex-start`)}>PREVIEW · HOSTED AUDITS PLANNED</div>
+              <div style={css('display:flex;gap:10px;flex-wrap:wrap')}><a href="/audit" style={css(`background:${T};color:#07080a;font-weight:700;padding:14px 20px`)}>See the audit preview</a><a href="/arena" style={css('border:1px solid #e9ebee;color:#e9ebee;font-weight:600;padding:13px 20px')}>Enter the arena</a></div>
             </div>
 
             <div style={css(`position:absolute;left:50%;top:50%;transform:translate(-50%,-50%) scale(${V.toastScale});opacity:${V.toastO};transition:opacity .25s, transform .25s;pointer-events:none;text-align:center;display:flex;flex-direction:column;gap:8px`)}>
@@ -314,7 +319,7 @@ export class Landing extends Component {
               <div className="hx-hide-sm" style={css('color:#9aa0a8;white-space:nowrap')}>{V.chap[0]} · {V.chap[1]}</div>
               <div style={css('display:flex;gap:8px;align-items:center;color:#9aa0a8;white-space:nowrap')}><div style={css(`width:7px;height:7px;border-radius:50%;background:${R};opacity:${V.blink}`)} />{V.clock}</div>
             </div>
-            <div style={css('position:absolute;right:clamp(12px,2vw,26px);top:50%;transform:translateY(-50%);display:flex;flex-direction:column;gap:10px;pointer-events:none')}>
+            <div className="hx-rail" style={css('position:absolute;right:clamp(12px,2vw,26px);top:50%;transform:translateY(-50%);display:flex;flex-direction:column;gap:10px;pointer-events:none')}>
               {V.rail.map((r, i) => <div key={i} style={css('display:flex;align-items:center;gap:8px;justify-content:flex-end')}><div style={css(`width:${r.w};height:2px;background:${r.col};transition:width .3s`)} /></div>)}
             </div>
             <div style={css(`position:absolute;left:50%;bottom:22px;transform:translateX(-50%);white-space:nowrap;font-family:${mono};font-size:10px;letter-spacing:.2em;color:#6b7179;opacity:${V.o0};pointer-events:none`)}>SCROLL · MOVE TO LOOK AROUND</div>

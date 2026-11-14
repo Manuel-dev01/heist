@@ -29,7 +29,7 @@ describe('local preview HTTP boundary', () => {
   });
   it('bounds requests and resets after a window', () => {
     const now = 100000;
-    for (let i=0;i<30;i++) consumeLocalLimit('practice', now);
+    for (let i=0;i<240;i++) consumeLocalLimit('practice', now);
     expect(() => consumeLocalLimit('practice', now)).toThrow();
     expect(() => consumeLocalLimit('practice', now+60000)).not.toThrow();
   });
