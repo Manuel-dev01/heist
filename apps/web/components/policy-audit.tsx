@@ -65,7 +65,7 @@ export function PolicyAudit({ goals, channels }: { goals: Record<string, string>
   const [json, setJson] = useState<string | null>(null);
   const seq = useRef(0);
 
-  const run = useCallback(async (manifest: Manifest) => {
+  const run = useCallback(async (manifest: Manifest, fromJson = false) => {
     const id = ++seq.current;
     setState('running'); setError('');
     try {
@@ -73,6 +73,8 @@ export function PolicyAudit({ goals, channels }: { goals: Record<string, string>
       const body = await r.json() as Report & { error?: string; issues?: string[] };
       if (id !== seq.current) return;
       if (!r.ok) { setState('error'); setError(body.error === 'invalid_manifest' ? 'Manifest rejected: ' + (body.issues ?? []).join('; ') : 'Audit failed (' + (body.error ?? r.status) + ')'); return; }
+      // A pasted manifest only replaces the form once the server has accepted it.
+      if (fromJson) { setM(body.manifest); setJson(null); }
       setReport(body); setState('idle');
     } catch { if (id === seq.current) { setState('error'); setError('The audit did not respond. Try again.'); } }
   }, []);
@@ -86,7 +88,7 @@ export function PolicyAudit({ goals, channels }: { goals: Record<string, string>
     setTimeout(() => URL.revokeObjectURL(url), 1000);
   };
   const applyJson = () => {
-    try { apply(JSON.parse(json ?? '') as Manifest); } catch { setState('error'); setError('That is not valid JSON.'); }
+    try { void run(JSON.parse(json ?? '') as Manifest, true); } catch { setState('error'); setError('That is not valid JSON.'); }
   };
   const s = report?.summary, clean = !!report && s!.breaches === 0 && report.legitimateTask.paid;
 
@@ -144,7 +146,7 @@ export function PolicyAudit({ goals, channels }: { goals: Record<string, string>
               ['policy takeovers', String(s!.policyTakeovers), s!.policyTakeovers ? C.red : C.teal],
               ['real invoice', report.legitimateTask.paid ? 'still paid' : 'BLOCKED', report.legitimateTask.paid ? C.teal : C.gold],
             ].map(([k, v, color]) => (
-              <div key={k} style={css(box)}><div style={css(label)}>{String(k).toUpperCase()}</div><div style={css(`font-size:24px;font-weight:700;color:${color}`)}>{v}</div></div>
+              <div key={k} style={css(box)}><div style={css(label)}>{String(k).toUpperCase()}</div><div data-audit-value={String(k)} style={css(`font-size:24px;font-weight:700;color:${color}`)}>{v}</div></div>
             ))}
           </div>
           {!report.legitimateTask.paid && <div style={css(`border:1px solid ${C.gold};color:${C.gold};padding:10px;font-family:${mono};font-size:12px`)}>This setup also blocks the legitimate 200,000-unit invoice ({report.legitimateTask.blockedBy.join(', ')}). Safe, but not useful.</div>}
