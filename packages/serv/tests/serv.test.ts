@@ -127,6 +127,16 @@ describe('validated output and evidence', () => {
     expect(reply.costEstimateUsd).toBeCloseTo(0.000057);
     await expect(clientWith(async () => completion({ model: 'gpt-5.4-nano-2026-11-01' })).complete(request)).rejects.toMatchObject({ code: 'model_mismatch' });
   });
+  it('accepts only the exact live-evidenced gpt-5.5 snapshot for gpt-5.5 requests', async () => {
+    const frontier: ModelRequest = { ...request, model: 'gpt-5.5' };
+    const reply = await clientWith(async () => completion({ model: 'gpt-5.5-2026-04-23' })).complete(frontier);
+    expect(reply.model).toBe('gpt-5.5');
+    expect(reply.metadata.observedModel).toBe('gpt-5.5-2026-04-23');
+    expect(reply.metadata.modelAliasEvidence).toContain('2026-11-14');
+    await expect(clientWith(async () => completion({ model: 'gpt-5.5-2026-05-01' })).complete(frontier)).rejects.toMatchObject({ code: 'model_mismatch' });
+    await expect(clientWith(async () => completion({ model: 'gpt-5.5-2026-04-23' })).complete(request)).rejects.toMatchObject({ code: 'model_mismatch' });
+    await expect(clientWith(async () => completion({ model: 'gpt-5.4-nano-2026-03-17' })).complete(frontier)).rejects.toMatchObject({ code: 'model_mismatch' });
+  });
   it('classifies actual SDK timeout and connection causes without exposing messages', () => {
     const timedOut = new APIConnectionTimeoutError({ message: TOKEN });
     expect(timedOut.name).toBe('Error');

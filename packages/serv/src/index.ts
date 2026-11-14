@@ -5,8 +5,14 @@ import { z } from 'zod';
 export const SERV_BASE_URL = 'https://inference-api.openserv.ai/v1';
 // Exact provider snapshot observed in authorized raw inference on 2026-10-28; no prefix matching.
 export const SERV_NANO_SNAPSHOT = 'gpt-5.4-nano-2026-03-17';
+// Exact provider snapshot returned for gpt-5.5 by authorized raw SERV inference on 2026-11-14; no prefix matching.
+export const SERV_GPT55_SNAPSHOT = 'gpt-5.5-2026-04-23';
+const SNAPSHOT_EVIDENCE: Readonly<Record<string, readonly [string, string]>> = {
+  'gpt-5.4-nano': [SERV_NANO_SNAPSHOT, '2026-10-28'],
+  'gpt-5.5': [SERV_GPT55_SNAPSHOT, '2026-11-14'],
+};
 function acceptedModel(base: string, requested: string, observed: string): boolean {
-  return observed === base || observed === requested || (base === 'gpt-5.4-nano' && observed === SERV_NANO_SNAPSHOT);
+  return observed === base || observed === requested || SNAPSHOT_EVIDENCE[base]?.[0] === observed;
 }
 const JsonObject = z.record(z.string(), z.json());
 const ToolCallSchema = z.object({ id: z.string().min(1).max(300), name: z.string().regex(/^[a-zA-Z0-9_-]{1,64}$/), arguments: z.string().max(100_000) }).strict();
@@ -240,7 +246,7 @@ export function createServClient(options: ServClientOptions = {}, injectedTransp
         metadata: {
           requestedModel: built.body.model,
           observedModel,
-          modelAliasEvidence: observedModel === SERV_NANO_SNAPSHOT ? 'Exact snapshot observed by authorized raw SERV validation on 2026-10-28; other snapshots unverified.' : null,
+          modelAliasEvidence: SNAPSHOT_EVIDENCE[baseModel]?.[0] === observedModel ? 'Exact snapshot observed by authorized raw SERV validation on ' + SNAPSHOT_EVIDENCE[baseModel]![1] + '; other snapshots unverified.' : null,
           promptSha256: createHash('sha256').update(built.systemPrompt).digest('hex'),
           latencyMs: Math.round(performance.now() - start),
           modelMatchesRequest: acceptedModel(baseModel, built.body.model, response.model),
