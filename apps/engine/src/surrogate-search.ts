@@ -53,6 +53,9 @@ const PlanContent = z.object({
   seedCorpus: BenchmarkCorpusSchema,
   seedCaseIds: z.array(z.string().min(1).max(120)).min(1).max(32),
   attackerModel: model, surrogateModel: model,
+  // Optional: label live screening as SERV raw mode (the caller injects a SERV client with the raw header).
+  // Absent means Dolphin, so existing plans keep their content and hashes.
+  surrogateProvider: z.literal('serv_raw').optional(),
   attackerSnapshotId: label.nullable(), surrogateSnapshotId: label.nullable(),
   attackerPriceSnapshotHash: digest.nullable(), surrogatePriceSnapshotHash: digest.nullable(),
   screen: ScreenSettings, refinement: RefinementSettings, limits: SurrogateLimitsSchema,
@@ -68,7 +71,7 @@ function checkPlan(plan: PlanBody): boolean {
   try {
     const corpus = parseBenchmarkCorpus(plan.seedCorpus);
     if (new Set(plan.seedCaseIds).size !== plan.seedCaseIds.length ||
-        (plan.source === 'scripted_fixture' && (plan.attackerModel !== 'fixture-model' || plan.surrogateModel !== 'fixture-model')) ||
+        (plan.source === 'scripted_fixture' && (plan.attackerModel !== 'fixture-model' || plan.surrogateModel !== 'fixture-model' || plan.surrogateProvider !== undefined)) ||
         plan.selectionCount > plan.seedCaseIds.length * (1 + plan.refinement.maxRefinementsPerSeed) ||
         plan.screen.maxRounds > plan.limits.maxModelCalls ||
         plan.screen.maxRounds * plan.screen.maxOutputTokens > plan.limits.maxTotalOutputTokens) return false;
@@ -182,7 +185,9 @@ function slotId(rootIndex: number, round: number, kind: 'screen' | 'refine'): st
 }
 function screenConfig(plan: SurrogatePlan): HarnessConfig {
   return HarnessConfigSchema.parse({ model: plan.surrogateModel, enforcement: 'observe', policy: plan.seedCorpus.policy, ...plan.screen,
-    providerConfig: { provider: plan.source === 'scripted_fixture' ? 'fixture' : 'dolphin', purpose: 'surrogate_screening', protocol: PROTOCOL, source: plan.source } });
+    providerConfig: plan.source === 'scripted_fixture' ? { provider: 'fixture', purpose: 'surrogate_screening', protocol: PROTOCOL, source: plan.source }
+      : plan.surrogateProvider === 'serv_raw' ? { provider: 'serv', features: { raw: true }, purpose: 'surrogate_screening', protocol: PROTOCOL, source: plan.source }
+      : { provider: 'dolphin', purpose: 'surrogate_screening', protocol: PROTOCOL, source: plan.source } });
 }
 interface RequestFact { bytes: number; retainable: boolean }
 interface CandidateMemo {

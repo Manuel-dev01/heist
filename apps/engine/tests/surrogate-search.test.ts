@@ -612,3 +612,27 @@ describe('explicit expanded refinement limits', () => {
     expect(result).toEqual(before); expect(victim.complete).toHaveBeenCalledTimes(2); expect(attacker.complete).toHaveBeenCalledOnce(); verify(p, result);
   });
 });
+
+describe('serv_raw surrogate provider label', () => {
+  const liveClient = (model: string, reply: () => ModelResponse['message']): ModelClient => ({
+    async complete() { return { model, message: reply(), usage: { inputTokens: 10, outputTokens: 5, cachedInputTokens: 0 }, costEstimateUsd: null }; },
+  });
+  const live = (patch: Partial<CreateSurrogatePlanInput> = {}) => createSurrogatePlan({ ...input(), source: 'live_inference',
+    attackerModel: 'attacker-live', surrogateModel: 'gpt-5.4-nano', refinement: { ...input().refinement, maxRefinementsPerSeed: 0 }, ...patch });
+  it('keeps plans without the field unchanged and labels SERV raw screens distinctly', async () => {
+    expect(live().planHash).toBe(live().planHash);
+    expect('surrogateProvider' in live()).toBe(false);
+    const served = live({ surrogateProvider: 'serv_raw' });
+    expect(served.planHash).not.toBe(live().planHash);
+    const run = async (p: SurrogatePlan) => runSurrogateSearch({ plan: p, allowInference: true,
+      attackerClient: liveClient('attacker-live', () => ({ content: 'unused' })),
+      surrogateClient: liveClient('gpt-5.4-nano', () => ({ content: 'Finished the synthetic task.' })) });
+    const a = await run(live()), b = await run(served);
+    expect(verifySurrogateResult({ plan: served, result: b }).valid).toBe(true);
+    const screenHash = (r: SurrogateResult) => (r.events[0] as { record: { configHash: string } }).record.configHash;
+    expect(screenHash(a)).not.toBe(screenHash(b));
+  });
+  it('rejects the label on scripted fixtures', () => {
+    expect(() => createSurrogatePlan({ ...input(), surrogateProvider: 'serv_raw' })).toThrow();
+  });
+});
