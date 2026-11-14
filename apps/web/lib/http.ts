@@ -2,20 +2,34 @@ export class RequestInputError extends Error {
   constructor(public readonly status: number, public readonly code: string) { super(code); }
 }
 
-export function assertLocalRequest(request: Request): void {
+/** Public hosts the scripted range may be served from: the platform-provided deployment hosts plus an explicit allowlist. */
+export function allowedPublicHosts(env: Record<string, string | undefined> = process.env): Set<string> {
+  return new Set([env.VERCEL_URL, env.VERCEL_BRANCH_URL, env.VERCEL_PROJECT_PRODUCTION_URL, ...(env.HEIST_PUBLIC_HOSTS ?? '').split(',')]
+    .map((host) => host?.trim().toLowerCase() ?? '').filter((host) => /^[a-z0-9.-]{1,253}$/.test(host)));
+}
+
+/**
+ * Same-origin guard for the scripted range APIs (no inference, keys or funds behind them).
+ * Loopback: Origin must match the actual loopback Host and port. Public: the Host must be an allowed
+ * deployment host and the browser Origin must be exactly https://<host>. Cross-site requests and
+ * non-JSON bodies are always rejected; forwarded headers are never trusted.
+ */
+export function assertLocalRequest(request: Request, env: Record<string, string | undefined> = process.env): void {
   const url = new URL(request.url);
-  if (!['127.0.0.1', 'localhost', '[::1]'].includes(url.hostname)) throw new RequestInputError(403, 'local_preview_only');
-  // Next may normalize its internal URL to localhost. Bind Origin to the actual
-  // loopback Host, never to forwarded headers or an arbitrary caller-supplied host.
-  const authority = request.headers.get('host') ?? url.host;
-  if (!/^(?:127\.0\.0\.1|localhost|\[::1\])(?::[0-9]{1,5})?$/i.test(authority))
-    throw new RequestInputError(403, 'local_preview_only');
-  let external: URL;
-  try { external = new URL(url.protocol + '//' + authority); }
-  catch { throw new RequestInputError(403, 'local_preview_only'); }
-  if (external.port !== url.port) throw new RequestInputError(403, 'origin_rejected');
+  const authority = (request.headers.get('host') ?? url.host).toLowerCase();
   const origin = request.headers.get('origin');
-  if (origin && origin !== external.origin) throw new RequestInputError(403, 'origin_rejected');
+  const loopback = ['127.0.0.1', 'localhost', '[::1]'].includes(url.hostname) && /^(?:127\.0\.0\.1|localhost|\[::1\])(?::[0-9]{1,5})?$/i.test(authority);
+  if (loopback) {
+    // Next may normalize its internal URL to localhost. Bind Origin to the actual loopback Host.
+    let external: URL;
+    try { external = new URL(url.protocol + '//' + authority); }
+    catch { throw new RequestInputError(403, 'local_preview_only'); }
+    if (external.port !== url.port) throw new RequestInputError(403, 'origin_rejected');
+    if (origin && origin !== external.origin) throw new RequestInputError(403, 'origin_rejected');
+  } else {
+    if (!allowedPublicHosts(env).has(authority)) throw new RequestInputError(403, 'host_not_allowed');
+    if (origin !== 'https://' + authority) throw new RequestInputError(403, 'origin_rejected');
+  }
   if (request.headers.get('sec-fetch-site') === 'cross-site') throw new RequestInputError(403, 'origin_rejected');
   const contentType = request.headers.get('content-type')?.split(';')[0]?.trim().toLowerCase();
   if (contentType !== 'application/json') throw new RequestInputError(415, 'json_required');

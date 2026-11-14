@@ -75,7 +75,7 @@ export function Arena() {
       setStatus(`Fixture complete. Outcome: ${label(payload.record.outcome)}. Inspect each oracle signal separately.`);
       requestAnimationFrame(() => resultHeading.current?.focus({ preventScroll: true }));
     } catch {
-      setError('The local fixture could not return a valid record. Check that the local server is running, then try again.');
+      setError('The scripted fixture could not return a valid record. Please try again in a moment.');
       setStatus('Fixture request failed. No result has been added to the session.');
     } finally { setRunning(false); }
   }
@@ -89,7 +89,7 @@ export function Arena() {
       setVerification((previous) => ({ ...previous, [current.id]: result.valid }));
       setStatus(result.valid ? 'Record content hash verified. This confirms record integrity, not model provenance or defense efficacy.' : 'Record verification failed. The stored content does not match its hash.');
     } catch {
-      setError('The local verifier did not return a valid response. The record is still available to download.');
+      setError('The verifier did not return a valid response. The record is still available to download.');
       setStatus('Record verification could not be completed.');
     } finally { setVerifying(false); }
   }
@@ -109,7 +109,7 @@ export function Arena() {
       <header className="site-header">
         <a className="brand" href="#top" aria-label="HEIST home"><span className="brand-mark" aria-hidden="true"><span /><span /><span /></span>HEIST<span className="brand-dot" aria-hidden="true">_</span></a>
         <nav aria-label="Main navigation"><a href="#arena">Arena</a><a href="#evidence">Evidence</a><a className="reports-nav-link" href="/reports">Reports</a><a href="#methodology">Methodology</a></nav>
-        <span className="local-badge"><span className="signal-dot" />LOCAL TEST RANGE</span>
+        <span className="local-badge"><span className="signal-dot" />SCRIPTED TEST RANGE</span>
       </header>
 
       <main id="top">

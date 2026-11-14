@@ -1,5 +1,5 @@
 import { afterEach, describe, it, expect, vi } from 'vitest';
-import { readBoundedJson, consumeLocalLimit, RequestInputError, JSON_BODY_DEADLINE_MS, MAX_IN_FLIGHT_JSON_READERS } from '../lib/http';
+import { assertLocalRequest, allowedPublicHosts, readBoundedJson, consumeLocalLimit, RequestInputError, JSON_BODY_DEADLINE_MS, MAX_IN_FLIGHT_JSON_READERS } from '../lib/http';
 afterEach(() => { vi.useRealTimers(); vi.restoreAllMocks(); });
 const req = (body: string, headers: Record<string,string> = {}, url = 'http://127.0.0.1:3000/api/practice') =>
   new Request(url, { method: 'POST', headers: { 'content-type': 'application/json', ...headers }, body });
@@ -115,5 +115,29 @@ describe('bounded JSON reader cancellation and capacity', () => {
     for (let index = 0; index < MAX_IN_FLIGHT_JSON_READERS + 2; index++)
       await expect(readBoundedJson(req('{}'), 100)).resolves.toEqual({});
     expect(vi.getTimerCount()).toBe(0);
+  });
+});
+
+describe('public same-origin boundary for the scripted range', () => {
+  const env = { VERCEL_URL: 'heist-abc123.vercel.app', HEIST_PUBLIC_HOSTS: 'heist-khaki.vercel.app, Bad Host!' };
+  const pub = (headers: Record<string, string>, url = 'https://heist-khaki.vercel.app/api/practice') =>
+    new Request(url, { method: 'POST', headers: { 'content-type': 'application/json', ...headers }, body: '{}' });
+  it('parses only well-formed allowlisted hosts', () => {
+    expect([...allowedPublicHosts(env)].sort()).toEqual(['heist-abc123.vercel.app', 'heist-khaki.vercel.app']);
+    expect(allowedPublicHosts({}).size).toBe(0);
+  });
+  it('accepts an allowlisted host only with its exact https Origin', () => {
+    expect(() => assertLocalRequest(pub({ host: 'heist-khaki.vercel.app', origin: 'https://heist-khaki.vercel.app' }), env)).not.toThrow();
+    expect(() => assertLocalRequest(pub({ host: 'heist-abc123.vercel.app', origin: 'https://heist-abc123.vercel.app' }, 'https://heist-abc123.vercel.app/api/practice'), env)).not.toThrow();
+  });
+  it('rejects unlisted hosts, missing or foreign origins, plain http, cross-site and non-JSON', () => {
+    const bad = (headers: Record<string, string>, code: string, e: Record<string, string> = env) => expect(() => assertLocalRequest(pub(headers), e)).toThrow(expect.objectContaining({ code }));
+    bad({ host: 'evil.example', origin: 'https://evil.example' }, 'host_not_allowed');
+    bad({ host: 'heist-khaki.vercel.app', origin: 'https://heist-khaki.vercel.app' }, 'host_not_allowed', {});
+    bad({ host: 'heist-khaki.vercel.app' }, 'origin_rejected');
+    bad({ host: 'heist-khaki.vercel.app', origin: 'https://evil.example' }, 'origin_rejected');
+    bad({ host: 'heist-khaki.vercel.app', origin: 'http://heist-khaki.vercel.app' }, 'origin_rejected');
+    bad({ host: 'heist-khaki.vercel.app', origin: 'https://heist-khaki.vercel.app', 'sec-fetch-site': 'cross-site' }, 'origin_rejected');
+    bad({ host: 'heist-khaki.vercel.app', origin: 'https://heist-khaki.vercel.app', 'x-forwarded-host': 'evil.example', 'content-type': 'text/plain' }, 'json_required');
   });
 });
