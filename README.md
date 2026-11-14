@@ -12,7 +12,18 @@ After installing dependencies, start the browser practice range:
 pnpm --filter @heist/web dev
 ```
 
-Open http://127.0.0.1:3000. Choose a scripted scenario and executor mode, inspect the independent decision/execution/utility/loss signals, verify the content hash and download the full record. Notes are retained as text; scripts do not interpret them. Browser history lasts only for the current session. There is no wallet connection or inference in this route.
+Open http://127.0.0.1:3000 for the product site. Its numbers come from `apps/web/data/evidence.json`, a sanitized export of the closed, audited benchmark runs.
+
+- **`/`**: the landing story.
+- **`/arena`**: the vault ladder.
+- **`/arena/attempt`**: replays the real recorded breach and its held twin.
+- **`/proof`**: re-derives the attempt hash, re-runs the deterministic oracle and replays every saved decision through the harness, on the server, on demand.
+- **`/defense-curve`**: breach rates with 95% Clopper-Pearson upper bounds and visible token cost per 1,000 interactions.
+- **`/pod`**: the adaptive search tree.
+- **`/exploits`**: the exploit file.
+- **`/audit`**: a preview of the planned audit flow, shown on the reference vault.
+
+Open `/range` for the scripted practice range. Choose a scripted scenario and executor mode, inspect the independent decision/execution/utility/loss signals, verify the content hash and download the full record. Notes are retained as text; scripts do not interpret them. Browser history lasts only for the current session. There is no wallet connection or inference in this route.
 
 Open `/reports` to inspect a saved benchmark `report.json`. Choose the file manually; it stays in your browser. The inspector checks its report hash and basic summary consistency, then shows declared coverage, errors, availability, utility, latency and partial token estimates. It does not verify attempt entries, provider provenance or billing. A matching hash alone does not establish that the supplied metrics are true.
 

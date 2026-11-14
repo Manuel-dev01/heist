@@ -1,5 +1,5 @@
-import { Arena } from '../components/arena';
+import { Landing } from '../components/landing';
 
 export default function HomePage() {
-  return <Arena />;
+  return <Landing />;
 }

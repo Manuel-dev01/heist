@@ -1,0 +1,28 @@
+/* HEIST product screens (design system from the Claude Design files). Layout helpers only; visual styles are inline. */
+.hx-page a { color: inherit; }
+.hx-page a:hover { color: #fff; }
+.hx-wrap { max-width: 1280px; margin: 0 auto; }
+.hx-vaults { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 2px; background: #23272d; }
+.hx-cols-3 { display: grid; grid-template-columns: 1fr 1.15fr 0.9fr; }
+.hx-proof { display: grid; grid-template-columns: 1.1fr 1fr 0.9fr; }
+.hx-pod { display: grid; grid-template-columns: 170px 1fr 300px; gap: 24px; }
+.hx-exploits { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; }
+.hx-curve { display: grid; grid-template-columns: repeat(8, minmax(0, 1fr)); }
+.hx-split { display: grid; grid-template-columns: 1fr 380px; gap: 32px; align-items: end; }
+.hx-ledger { display: grid; grid-template-columns: 220px 1fr 220px; gap: 24px; align-items: center; }
+.hx-scroll-x { overflow-x: auto; }
+@media (max-width: 1100px) {
+  .hx-vaults { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .hx-exploits { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .hx-pod { grid-template-columns: 1fr; }
+}
+@media (max-width: 760px) {
+  .hx-vaults, .hx-cols-3, .hx-proof, .hx-exploits, .hx-split { grid-template-columns: 1fr; }
+  .hx-ledger { grid-template-columns: 1fr; gap: 12px; }
+  .hx-header { flex-direction: column; align-items: flex-start !important; }
+  .hx-header-right { display: none !important; }
+  .hx-cols-3 > *, .hx-proof > * { border-right: 0 !important; border-bottom: 1px solid #23272d; }
+  .hx-curve-wrap { min-width: 720px; }
+  .hx-hide-sm { display: none !important; }
+  .hx-verdict { order: -1; min-height: 240px; }
+}
