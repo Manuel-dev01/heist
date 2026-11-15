@@ -296,6 +296,8 @@ flowchart LR
 
 GitHub Actions ([`.github/workflows/ci.yml`](../.github/workflows/ci.yml)) runs on every push: frozen install, strict typecheck, all tests, production build, the offline `pnpm demo` and a dependency audit.
 
+Delivery is continuous: the GitHub repository is connected to the Vercel project (root `apps/web`, frozen pnpm install). Every push to `main` deploys to production at https://heist-khaki.vercel.app, and every pull request gets its own preview deployment. Preview hosts pass the same-origin guard through `VERCEL_BRANCH_URL` and `VERCEL_URL`.
+
 ## Extending HEIST
 
 - **New defense arm.** Add the control to `@heist/serv`'s feature schema, then insert a step in the defense plan that changes only that control. The plan validator rejects steps that change more than one.

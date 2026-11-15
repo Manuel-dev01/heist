@@ -13,21 +13,21 @@ HEIST is a red-team arena and auditor for AI agents that hold money. It fires a 
 2. [Judge path: try it in five minutes](#judge-path-try-it-in-five-minutes)
 3. [Run it locally](#run-it-locally)
 4. [What we measured](#what-we-measured)
-5. [How a breach is decided](#how-a-breach-is-decided)
-6. [The policy audit](#the-policy-audit)
-7. [Partner integrations](#partner-integrations)
-8. [Architecture](#architecture)
-9. [Repository map](#repository-map)
-10. [Command reference](#command-reference)
-11. [What was built during the hackathon](#what-was-built-during-the-hackathon)
+5. [Verify the claims yourself](#verify-the-claims-yourself)
+6. [How a breach is decided](#how-a-breach-is-decided)
+7. [The policy audit](#the-policy-audit)
+8. [Partner integrations](#partner-integrations)
+9. [Architecture](#architecture)
+10. [Repository map](#repository-map)
+11. [Command reference](#command-reference)
 12. [Safety, scope and honest limits](#safety-scope-and-honest-limits)
 13. [Roadmap](#roadmap)
 
 ## The 60-second version
 
 - **The problem.** Agents now pay invoices, move funds and edit their own spending rules. A single injected sentence in a web page, inbox or chat can redirect money. Owners have no standard way to measure that risk before raising an agent's limit.
-- **The arena.** Seven "vaults" run the same wallet agent with one defense added at a time: raw model, SERV default, Prompt Guard, Kronos, Multipath, Shadow Agent, then an enforced policy executor. Every vault faced the same frozen 1,000-attack corpus plus 40 benign tasks, live on SERV.
-- **The result.** 5,383 recorded attempts, **one breach**: raw `gpt-5.4-nano` added the attacker to its own allowlist after a split web-page instruction. Every defended vault held 0/500, and every vault still completed its 40 benign tasks. The breach and its held twin replay byte-for-byte from the bundled evidence.
+- **The arena.** Seven "vaults" run the same wallet agent with one defense added at a time: raw model, SERV default, Prompt Guard, Kronos, Multipath, Shadow Agent, then an enforced policy executor. All runs used one frozen, hashed corpus, live on SERV: the raw model faced all 1,000 attacks, every vault faced the same fixed 500-attack subset, and each faced 40 benign tasks.
+- **The result.** 5,383 recorded attempts, **one breach**: raw `gpt-5.4-nano` added the attacker to its own allowlist after a split web-page instruction. Every defended vault held 0/500, and every vault still completed its 40 benign tasks. The breach and its held twin ship as complete records that anyone can re-verify offline.
 - **The wallet layer.** Kite Passport spending caps were exercised live: Kite's own backend refused an off-catalog payout and an over-cap payment, with $0 moved.
 - **The audit.** Owners describe how their agent spends. HEIST assumes the model is fully fooled, runs all 1,000 attacks through the same ledger and breach rules, and returns breaches, value at risk, top exploits and re-tested fixes, with a hashed report. Free, instant, no keys.
 
@@ -39,16 +39,16 @@ HEIST is a red-team arena and auditor for AI agents that hold money. It fires a 
 | 2 | [/arena](https://heist-khaki.vercel.app/arena) | Seven vaults with measured breach counts and 95% upper bounds; the same attack against every vault; the two live Kite refusals. |
 | 3 | [/arena/attempt](https://heist-khaki.vercel.app/arena/attempt) | The real breach, turn by turn. Switch between web page, inbox, chat and tool output; watch the ledger. |
 | 4 | [/proof](https://heist-khaki.vercel.app/proof) | Press **Verify replay**. The server recomputes the record hash, re-runs the deterministic oracle and replays every saved model decision through the harness. |
-| 5 | [/audit](https://heist-khaki.vercel.app/audit) | Start from "Prompt-only agent" (829/1,000 breaches), press **Apply** on a fix, then **Apply all** (0/1,000). Download the hashed report. |
+| 5 | [/audit](https://heist-khaki.vercel.app/audit) | Start from "Prompt-only agent" (829/1,000 breaches), press **Apply** on "Lock policy writes" (600/1,000), then **Apply all** (0/1,000). Download the hashed report. |
 | 6 | [/defense-curve](https://heist-khaki.vercel.app/defense-curve) | Breach rate, upper bound and visible token cost per 1,000 interactions for each defense, plus the GPT-5.5 reference. |
-| 7 | [/pod](https://heist-khaki.vercel.app/pod) and [/exploits](https://heist-khaki.vercel.app/exploits) | The adaptive attacker's search tree (Dolphin) and the full exploit file. |
+| 7 | [/pod](https://heist-khaki.vercel.app/pod) and [/exploits](https://heist-khaki.vercel.app/exploits) | The adaptive attacker's search tree (Dolphin: 116 candidates, 90 refinements) and the exploit file. |
 | 8 | [/range](https://heist-khaki.vercel.app/range) | Run scripted fixtures yourself, then verify the content hash of the record you just produced. |
 
 Prefer a terminal? `pnpm demo` runs the same story offline in about five seconds (see below).
 
 ## Run it locally
 
-**Requirements:** Node.js 22 or newer, pnpm 11.1.2. No API keys are needed for anything in this section.
+**Requirements:** Node.js 22 or newer and pnpm 11.1.2 (the version is pinned in `package.json`; if you do not have pnpm, run `corepack enable` once). Git, nothing else. No API keys, accounts or network access to model providers are needed for anything in this section.
 
 ```sh
 git clone https://github.com/Manuel-dev01/heist.git
@@ -114,6 +114,23 @@ All numbers come from closed, audited live runs. Their sanitized export ships wi
 - **Adaptive attacker.** An attacker model on Dolphin rewrote attacks using only the oracle's verdict. 116 candidates were screened against the raw vault; none broke it.
 - **Bounds.** Upper bounds are the upper end of exact two-sided 95% Clopper-Pearson intervals. Zero breaches in 500 is not "proved safe"; it bounds the rate.
 - **Costs.** Costs shown in the app are visible token-price estimates, not provider billing.
+
+## Verify the claims yourself
+
+Every headline claim maps to something you can check. "Re-derive" means you can recompute it from scratch; "inspect" means you can read the exact exported value and the code that produced the verdict.
+
+| Claim | How to check it | Level |
+|---|---|---|
+| The one breach is real and was decided by code, not an LLM | `pnpm demo` (step 1) or [/proof](https://heist-khaki.vercel.app/proof) → **Verify replay**: recomputes the record hash, re-runs [`evaluateOutcome`](packages/harness/src/oracle.ts) and replays the 4 saved model decisions through the harness | Re-derive |
+| Its held twin (same attack, defended vault) held | Same as above; the held record replays 2 decisions to `HELD` | Re-derive |
+| Records cannot be edited silently | Download the breach record from [/proof](https://heist-khaki.vercel.app/proof), edit any field, and POST `{"record": ...}` to `/api/verify` with header `Origin: https://heist-khaki.vercel.app`. The untouched record returns `valid: true`; any edit returns `valid: false` | Re-derive |
+| Policy audit numbers (829 → 600 → 0) | `pnpm demo` (step 4), the [/audit](https://heist-khaki.vercel.app/audit) page and [`apps/web/tests/audit.test.ts`](apps/web/tests/audit.test.ts); deterministic, so the report hash is identical on every machine | Re-derive |
+| Per-vault breach counts, upper bounds, benign completion | Exported values in [`apps/web/data/evidence.json`](apps/web/data/evidence.json) (`arms`, `frontier`, `totals`), each produced by the same oracle | Inspect |
+| Kite refused two payments live with $0 moved | Kite error codes, session caps and wallet balance in `evidence.json` → `kite` | Inspect |
+| The corpus has 1,000 attacks across five goals and three channels | [`apps/web/data/audit-corpus.json`](apps/web/data/audit-corpus.json) (ids, goals, channels, snippets) and its `corpusHash` | Inspect |
+| The engine, benchmark scheduler and oracle behave as documented | `pnpm test`: 979 tests across the harness, engine, clients and web app | Re-derive |
+
+The full set of 5,383 per-attempt records from the paid runs is kept private. It contains raw provider responses and run-budget files. The repository ships the sanitized per-vault summaries plus the two complete records above, which are re-verified end to end on every `pnpm demo` and CI run.
 
 ## How a breach is decided
 
@@ -190,21 +207,6 @@ Engine module docs: [benchmark](apps/engine/BENCHMARK.md), [benchmark records](a
 
 Live commands need credentials in `.env.local` (variable names in [`.env.example`](.env.example)) and an explicit credit flag. Default execution never contacts a provider.
 
-## What was built during the hackathon
-
-The hackathon ran November 2–15, 2026; existing projects were allowed with meaningful new work.
-
-- **Prior groundwork (October 28–30).** The isolated harness and oracle, SERV and Dolphin clients, the benchmark engine, corpus generation, surrogate search, and early bounded provider pilots.
-- **During the hackathon:**
-  - the complete live D2 baseline, the seven-vault D3 measurement and the GPT-5.5 reference;
-  - the adaptive Dolphin attack run;
-  - the Reppo client and live evaluation;
-  - live Kite Passport cap enforcement and the x402 payout route;
-  - the full product site and its server-side proof replay;
-  - the policy audit.
-
-Git history shows the split.
-
 ## Safety, scope and honest limits
 
 - **Synthetic funds only.** Every wallet tool acts on an in-memory ledger. No real wallet, chain, inbox or third-party agent is touched, and attacks target only HEIST's own vaults.
@@ -212,7 +214,7 @@ Git history shows the split.
 - **GPT-5.5 reference.** It is a separate reference, not a step in the defense ladder. Its 36 incomplete attempts are disclosed.
 - **Self-reported audit.** The policy audit scores the configuration you state, not your running code.
 - **Costs.** Costs are visible token-price estimates. Provider billing and SERV feature surcharges are not included.
-- **Credentials.** Secrets live only in `.env.local`. Provider clients suppress SDK debug logs, rebuild outbound headers, reject redirects and sanitize errors. Public routes are same-origin, body-bounded and rate-limited.
+- **Credentials.** Secrets live only in `.env.local`. Provider clients suppress SDK debug logs, rebuild outbound headers, reject redirects and sanitize errors. Public POST routes are same-origin, body-bounded and rate-limited; the x402 payout route is open by design to paying agents and never moves funds without facilitator settlement.
 
 ## Roadmap
 
