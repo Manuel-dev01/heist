@@ -13,8 +13,9 @@ export function allowedPublicHosts(env: Record<string, string | undefined> = pro
  * Loopback: Origin must match the actual loopback Host and port. Public: the Host must be an allowed
  * deployment host and the browser Origin must be exactly https://<host>. Cross-site requests and
  * non-JSON bodies are always rejected; forwarded headers are never trusted.
- * allowNonBrowser (agent-facing routes only): a request with no Origin and no Sec-Fetch-* headers is a
- * non-browser client such as an MCP tool. Browsers always send these on cross-site POSTs, so CSRF stays blocked.
+ * allowNonBrowser (agent-facing routes only): a request with no Origin and no Sec-Fetch-Site header is a
+ * non-browser client such as an MCP tool (Node fetch sends Sec-Fetch-Mode but never Sec-Fetch-Site). Browsers always
+ * send Origin and Sec-Fetch-Site on POSTs, so cross-site browser requests stay blocked.
  */
 export interface GuardOptions { allowNonBrowser?: boolean }
 export function assertLocalRequest(request: Request, env: Record<string, string | undefined> = process.env, opts: GuardOptions = {}): void {
@@ -31,7 +32,7 @@ export function assertLocalRequest(request: Request, env: Record<string, string 
     if (origin && origin !== external.origin) throw new RequestInputError(403, 'origin_rejected');
   } else {
     if (!allowedPublicHosts(env).has(authority)) throw new RequestInputError(403, 'host_not_allowed');
-    const nonBrowser = opts.allowNonBrowser === true && origin === null && !request.headers.get('sec-fetch-site') && !request.headers.get('sec-fetch-mode');
+    const nonBrowser = opts.allowNonBrowser === true && origin === null && !request.headers.get('sec-fetch-site');
     if (!nonBrowser && origin !== 'https://' + authority) throw new RequestInputError(403, 'origin_rejected');
   }
   if (request.headers.get('sec-fetch-site') === 'cross-site') throw new RequestInputError(403, 'origin_rejected');

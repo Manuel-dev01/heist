@@ -40,7 +40,7 @@ The repository also ships a Claude Code skill, [`.claude/skills/heist-audit`](..
 
 ## How the API accepts agents
 
-`/api/audit` and `/api/verify` accept same-origin browser requests and non-browser clients. A non-browser client is a request with no `Origin` and no `Sec-Fetch-*` headers, which is what this server sends. Browsers always send those headers on cross-site requests, so cross-site browser calls are still rejected. Bodies are size-bounded and rate-limited.
+`/api/audit` and `/api/verify` accept same-origin browser requests and non-browser clients. A non-browser client is a request with no `Origin` and no `Sec-Fetch-Site` header, which is what this server sends. Browsers always send both on POST requests, so cross-site browser calls are still rejected. Bodies are size-bounded and rate-limited.
 
 ## Test
 

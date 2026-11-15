@@ -272,7 +272,7 @@ API routes:
 
 | Route | Method | Input | Notes |
 |---|---|---|---|
-| `/api/audit` | POST | Manifest JSON (≤4 KB) | Same-origin browsers or non-browser agents (no `Origin`/`Sec-Fetch-*`), rate-limited; returns the hashed audit report. Used by the MCP server |
+| `/api/audit` | POST | Manifest JSON (≤4 KB) | Same-origin browsers or non-browser agents (no `Origin` or `Sec-Fetch-Site`), rate-limited; returns the hashed audit report. Used by the MCP server |
 | `/api/proof` | GET | none | Re-verifies only the bundled evidence |
 | `/api/practice` | POST | Scenario and mode (≤24 KB) | Scripted fixture run through the real harness |
 | `/api/verify` | POST | Attempt record (≤256 KB) | Recomputes the record hash; open to non-browser agents like `/api/audit` |
