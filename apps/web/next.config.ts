@@ -3,7 +3,7 @@ const config: NextConfig = {
   poweredByHeader: false,
   devIndicators: false,
   reactStrictMode: true,
-  transpilePackages: ['@heist/harness'],
+  transpilePackages: ['@heist/harness', '@heist/serv'],
   // Deploy builds type-check app code only; tests and scripts are type-checked by `pnpm typecheck`.
   typescript: { tsconfigPath: 'tsconfig.build.json' },
   async headers() {

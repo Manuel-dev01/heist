@@ -51,6 +51,9 @@ importers:
       '@heist/harness':
         specifier: workspace:*
         version: link:../../packages/harness
+      '@heist/serv':
+        specifier: workspace:*
+        version: link:../../packages/serv
       next:
         specifier: 16.4.3
         version: 16.4.3(@types/node@26.6.5)(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
