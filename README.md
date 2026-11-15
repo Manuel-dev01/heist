@@ -5,7 +5,9 @@
 HEIST is a red-team arena and auditor for AI agents that hold money. It fires a frozen corpus of prompt-injection attacks at wallet agents, decides every breach with deterministic code (never an LLM judge), hashes each attempt so anyone can re-verify it, and turns the results into an audit that tells an agent's owner what gets out and which fix closes it.
 
 [![CI](https://github.com/Manuel-dev01/heist/actions/workflows/ci.yml/badge.svg)](https://github.com/Manuel-dev01/heist/actions/workflows/ci.yml)
-**Live:** https://heist-khaki.vercel.app · **Built for:** [SERV Hackathon 02](https://www.openserv.ai/hackathon-2) (OpenServ, with Dolphin, Kite and Reppo)
+**Live:** https://heist-khaki.vercel.app · **Demo video:** https://youtu.be/aehjP_u7unQ · **Built for:** [SERV Hackathon 02](https://www.openserv.ai/hackathon-2) (OpenServ, with Dolphin, Kite and Reppo)
+
+[![Watch the 4-minute HEIST demo](docs/media/demo-thumbnail.jpg)](https://youtu.be/aehjP_u7unQ)
 
 ## Contents
 
@@ -35,6 +37,7 @@ HEIST is a red-team arena and auditor for AI agents that hold money. It fires a 
 
 | # | Open | What to look for |
 |---|---|---|
+| 0 | [4-minute demo video](https://youtu.be/aehjP_u7unQ) | The whole product driven live, narrated: arena, the breach, proof replay, Kite refusals, the audit and `pnpm verify:runs`. |
 | 1 | [Landing](https://heist-khaki.vercel.app/) | Scroll the story: the vault ladder, the breach, the Kite wall, the adaptive attacker. |
 | 2 | [/arena](https://heist-khaki.vercel.app/arena) | Seven vaults with measured breach counts and 95% upper bounds; the same attack against every vault; the two live Kite refusals. |
 | 3 | [/arena/attempt](https://heist-khaki.vercel.app/arena/attempt) | The real breach: the split web-page payload, every tool call the agent made, the oracle verdict and the ledger. Toggle **BREACHED · VAULT 00** and **HELD · VAULT 06** to compare the identical attack on both. |
