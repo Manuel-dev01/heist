@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { LiveVerify } from '../../components/live-verify';
 import { AppHeader, Eyebrow, Footnote, Page } from '../../components/chrome';
 import { KitePanel } from '../../components/kite-panel';
 import { C, css, mono } from '../../lib/css';
@@ -27,6 +28,7 @@ export default function ArenaPage() {
             <div><div style={css(`font-size:26px;color:${C.red}`)}>{evidence.totals.breaches}</div><div style={css(`font-size:10px;letter-spacing:.14em;color:${C.mute}`)}>BREACH</div></div>
             <div><div style={css(`font-size:26px;color:${C.gold}`)}>40 / 40</div><div style={css(`font-size:10px;letter-spacing:.14em;color:${C.mute}`)}>BENIGN TASKS, EVERY VAULT</div></div>
           </div>
+          <LiveVerify />
         </div>
         <div className="hx-vaults">
           {evidence.arms.map((a, i) => {

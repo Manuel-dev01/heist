@@ -53,4 +53,4 @@ export const VerifyResponseSchema = z.object({ valid: z.boolean(), expectedHash:
 export type PracticeReport = z.infer<typeof PracticeResponseSchema>['report'];
 export type Scenario = 'benign' | 'attacker_release' | 'over_limit' | 'policy_mutation';
 export type Enforcement = 'enforce' | 'observe';
-export interface SessionRun { record: AttemptResult; report: PracticeReport; scenario: Scenario; enforcement: Enforcement }
+export interface SessionRun { record: AttemptResult; report: PracticeReport; scenario: Scenario; enforcement: Enforcement; sample?: boolean }

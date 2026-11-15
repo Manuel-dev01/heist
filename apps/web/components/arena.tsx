@@ -29,6 +29,7 @@ const scenarios: { id: Scenario; title: string; subtitle: string; code: string }
 const scenarioName = (id: Scenario) => scenarios.find((scenario) => scenario.id === id)?.title ?? id;
 const units = (value: string) => BigInt(value).toLocaleString('en-US');
 const label = (value: string) => value.replaceAll('_', ' ');
+const HISTORY_KEY = 'heist-range-history-v1';
 const shortHash = (value: string) => `${value.slice(0, 10)}…${value.slice(-8)}`;
 
 export function Arena() {
@@ -45,6 +46,24 @@ export function Arena() {
   const controllers = useRef(new Set<AbortController>());
   const resultHeading = useRef<HTMLHeadingElement>(null);
   useEffect(() => () => { for (const controller of controllers.current) controller.abort(); }, []);
+  // Keep this tab's records across reloads; on a first visit, load two real sample runs so the evidence is never empty.
+  const loaded = useRef(false);
+  useEffect(() => {
+    if (loaded.current) return; loaded.current = true;
+    let saved: SessionRun[] = [];
+    try { const raw = sessionStorage.getItem(HISTORY_KEY); if (raw) saved = (JSON.parse(raw) as SessionRun[]).filter((e) => PracticeResponseSchema.safeParse({ record: e.record, report: e.report }).success); } catch { saved = []; }
+    if (saved.length) { setHistory(saved); setStatus(`Restored ${saved.length} record${saved.length === 1 ? '' : 's'} from this tab.`); return; }
+    void (async () => {
+      setRunning(true); setStatus('Loading two sample runs: the same recipient swap, observed and then enforced.');
+      try {
+        const observed = await runOnce('attacker_release', 'observe', '', true), enforced = await runOnce('attacker_release', 'enforce', '', true);
+        setHistory([enforced, observed]); setSelectedId(enforced.record.id);
+        setStatus('Two sample runs loaded: observed, the swap settles and loses units; enforced, the executor blocks it. Run your own below.');
+      } catch { setStatus('Ready. All actions stay inside the synthetic fixture.'); }
+      finally { setRunning(false); }
+    })();
+  }, []);
+  useEffect(() => { if (!history.length) return; try { sessionStorage.setItem(HISTORY_KEY, JSON.stringify(history.slice(0, 12))); } catch { /* storage is optional */ } }, [history]);
 
   const active = history.find((entry) => entry.record.id === selectedId) ?? history[0];
   const record = active?.record;
@@ -64,15 +83,19 @@ export function Arena() {
     } finally { clearTimeout(timer); controllers.current.delete(controller); }
   }
 
+  async function runOnce(s: Scenario, e: Enforcement, n: string, sample = false): Promise<SessionRun> {
+    const payload = PracticeResponseSchema.parse(await postLocal('/api/practice', { scenario: s, enforcement: e, note: n }));
+    return { ...payload, scenario: s, enforcement: e, ...(sample ? { sample: true } : {}) };
+  }
+
   async function runPractice(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (running || note.length > 4000) return;
     setRunning(true); setError(''); setStatus('Running the selected scripted fixture.');
     try {
-      const payload = PracticeResponseSchema.parse(await postLocal('/api/practice', { scenario, enforcement, note }));
-      const entry: SessionRun = { ...payload, scenario, enforcement };
-      setHistory((previous) => [entry, ...previous]); setSelectedId(payload.record.id);
-      setStatus(`Fixture complete. Outcome: ${label(payload.record.outcome)}. Inspect each oracle signal separately.`);
+      const entry = await runOnce(scenario, enforcement, note);
+      setHistory((previous) => [entry, ...previous]); setSelectedId(entry.record.id);
+      setStatus(`Fixture complete. Outcome: ${label(entry.record.outcome)}. Inspect each oracle signal separately.`);
       requestAnimationFrame(() => resultHeading.current?.focus({ preventScroll: true }));
     } catch {
       setError('The scripted fixture could not return a valid record. Please try again in a moment.');
@@ -146,7 +169,7 @@ export function Arena() {
             <section className="record-panel panel" aria-labelledby="record-title"><div className="panel-topline"><h3 id="record-title">Attempt record</h3>{record && <span className={`integrity-badge ${verification[record.id] === true ? 'is-verified' : verification[record.id] === false ? 'is-invalid' : ''}`}>{verification[record.id] === true ? <><Icon name="check" />HASH VERIFIED</> : verification[record.id] === false ? <><Icon name="close" />HASH MISMATCH</> : 'NOT YET VERIFIED'}</span>}</div>
               {record ? <><div className="record-meta"><div><span className="micro-label">ATTEMPT ID</span><code>{record.id}</code></div><div><span className="micro-label">CONTENT HASH</span><code title={record.attemptHash}>{shortHash(record.attemptHash)}</code></div></div><div className="record-actions"><button className="button button-secondary" onClick={verifyRecord} disabled={verifying}><Icon name="check" />{verifying ? 'Verifying…' : 'Verify content hash'}</button><button className="button button-quiet" onClick={downloadRecord}><Icon name="download" />Download JSON</button></div><p className="verification-note">Verification checks record integrity. It does not attest to provider provenance or defense performance. Billing is unverified.</p><ToolLog record={record} /><Transcript record={record} /><details className="record-details"><summary>Full record <span>JSON</span><Icon name="chevron" /></summary><pre>{JSON.stringify(record, null, 2)}</pre></details></> : <div className="evidence-empty"><span className="empty-file" aria-hidden="true"><span /><span /><span /></span><h4>Nothing behind the numbers.</h4><p>Your first run creates a full attempt record with an oracle result, tool log, transcript, and content hash.</p><a className="text-link" href="#arena">Create a record <Icon name="arrow" /></a></div>}
             </section>
-            <aside className="history-panel panel" aria-labelledby="history-title"><div className="panel-topline"><h3 id="history-title">Session history</h3><span className="micro-label">{history.length} RECORDS</span></div>{history.length ? <><ol className="history-list">{history.map((entry, index) => <li key={entry.record.id}><button className={record?.id === entry.record.id ? 'is-active' : ''} onClick={() => { setSelectedId(entry.record.id); setStatus(`Inspecting ${scenarioName(entry.scenario)} record.`); }} aria-pressed={record?.id === entry.record.id}><span className="history-index">{String(history.length - index).padStart(2, '0')}</span><span className="history-copy"><strong>{scenarioName(entry.scenario)}</strong><span>{entry.enforcement === 'enforce' ? 'Enforced' : 'Observed'} · {label(entry.record.outcome)}</span></span><Icon name="chevron" /></button></li>)}</ol>{history.length > 6 && <p className="history-footnote">All {history.length} session records are available above.</p>}</> : <div className="history-empty"><span aria-hidden="true">[ — ]</span><p>No fixture attempts yet.</p><small>Run records will appear here.</small></div>}<div className="session-warning"><span aria-hidden="true">↳</span><p>History lives in memory.<br />Download records to keep them after a refresh.</p></div></aside>
+            <aside className="history-panel panel" aria-labelledby="history-title"><div className="panel-topline"><h3 id="history-title">Session history</h3><span className="micro-label">{history.length} RECORDS</span></div>{history.length ? <><ol className="history-list">{history.map((entry, index) => <li key={entry.record.id}><button className={record?.id === entry.record.id ? 'is-active' : ''} onClick={() => { setSelectedId(entry.record.id); setStatus(`Inspecting ${scenarioName(entry.scenario)} record.`); }} aria-pressed={record?.id === entry.record.id}><span className="history-index">{String(history.length - index).padStart(2, '0')}</span><span className="history-copy"><strong>{scenarioName(entry.scenario)}</strong><span>{entry.sample ? 'Sample · ' : ''}{entry.enforcement === 'enforce' ? 'Enforced' : 'Observed'} · {label(entry.record.outcome)}</span></span><Icon name="chevron" /></button></li>)}</ol>{history.length > 6 && <p className="history-footnote">All {history.length} session records are available above.</p>}</> : <div className="history-empty"><span aria-hidden="true">[ — ]</span><p>No fixture attempts yet.</p><small>Run records will appear here.</small></div>}<div className="session-warning"><span aria-hidden="true">↳</span><p>History is kept in this tab only.<br />Download records to keep them for good.</p></div></aside>
           </div>
         </section>
 
