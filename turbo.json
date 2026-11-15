@@ -1,5 +1,12 @@
 {
   "$schema": "https://turbo.build/schema.json",
+  "globalPassThroughEnv": [
+    "HEIST_PUBLIC_HOSTS",
+    "KITE_X402_PAYTO",
+    "KITE_X402_NETWORK",
+    "KITE_X402_ASSET",
+    "PIEVERSE_FACILITATOR_URL"
+  ],
   "tasks": {
     "build": {
       "dependsOn": [

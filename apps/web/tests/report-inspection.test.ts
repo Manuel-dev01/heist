@@ -1,7 +1,7 @@
 import { webcrypto } from 'node:crypto';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { hashCanonical } from '@heist/harness';
-import { createAttackCase, type PublicTargetContext } from '../../engine/node_modules/@heist/pod';
+import { createAttackCase, type PublicTargetContext } from '@heist/pod';
 import { createPaymentCorpus } from '../../engine/src/corpus';
 import { createBenchmarkPlan, runBenchmark } from '../../engine/src/benchmark';
 import {
