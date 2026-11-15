@@ -14,11 +14,12 @@ This document explains how HEIST is put together: what each package owns, how an
 8. [The adaptive attacker (Pod)](#the-adaptive-attacker-pod)
 9. [From closed runs to the website](#from-closed-runs-to-the-website)
 10. [The policy audit](#the-policy-audit)
-11. [Kite Passport and x402](#kite-passport-and-x402)
-12. [Web application and API surface](#web-application-and-api-surface)
-13. [Security and trust boundaries](#security-and-trust-boundaries)
-14. [Testing and CI](#testing-and-ci)
-15. [Extending HEIST](#extending-heist)
+11. [The live vault](#the-live-vault)
+12. [Kite Passport and x402](#kite-passport-and-x402)
+13. [Web application and API surface](#web-application-and-api-surface)
+14. [Security and trust boundaries](#security-and-trust-boundaries)
+15. [Testing and CI](#testing-and-ci)
+16. [Extending HEIST](#extending-heist)
 
 ## Design principles
 
@@ -198,6 +199,9 @@ flowchart LR
   AC --> API["/api/audit (server only)"]
   REL --> VR["pnpm verify:runs"]
   EJ --> VR
+  REL -->|Merkle root| KA[Kite testnet anchor<br/>block 22,044,909]
+  REL -->|dataset URI| RP[Reppo pod #4125<br/>RELY Datanet, Base]
+  KA --> VR
 ```
 
 - **Kept out of Git.** Spending budgets, approval logs, observer journals and raw provider HTTP responses stay in the ignored `.heist/` directory. Verdicts never depend on them.
@@ -207,11 +211,11 @@ flowchart LR
 - **Closing the loop.** `pnpm verify:runs` ([`apps/web/scripts/verify-runs.ts`](../apps/web/scripts/verify-runs.ts)) runs the following against the pinned asset hash:
   1. re-validates each plan with the engine's own `parseBenchmarkPlan`;
   2. for all 5,383 records, recomputes the hash, re-runs the oracle and replays the saved decisions through `runAttempt`;
-  3. recomputes every vault number and fails if any differs from `evidence.json`.
-
+  3. recomputes every vault number, including utility under attack, and fails if any differs from `evidence.json`;
   4. recomputes a two-level `heist-sha256-ordered-v1` Merkle tree: one root per run, then a top root over the four. It reads the anchoring transaction from Kite testnet (block 22,044,909) and checks that it carries the same root.
 
   A tampered bundle fails at each layer: asset hash, record hash, oracle, replay and the recomputed count. `/proof`, `/api/proof` and `pnpm demo` re-verify the two bundled records on their own.
+- **Published copies.** The same records are published on Reppo as pod #4125 in the RELY Datanet on Base, with the release asset as the dataset URI ([mint tx](https://basescan.org/tx/0xb8b640ff8bb6c15ab98a3fe9874ef58c9e986f8c6f28f179d9fb518991146c7b)).
 
 ## The policy audit
 
@@ -242,6 +246,31 @@ The audit turns each attack goal into the action a fully fooled agent would take
 
 Each check is evaluated individually, so the report shows exactly which control closed which goal. The audit is deterministic, needs no keys and is self-reported: it scores the stated configuration, not running code.
 
+## The live vault
+
+[`/rob`](https://heist-khaki.vercel.app/rob) lets anyone attack the real Open Safe vault. [`lib/live-vault.ts`](../apps/web/lib/live-vault.ts) holds the exact configuration from the measured runs: raw `gpt-5.4-nano` on SERV, observe mode, the same policy, round and token limits.
+
+```mermaid
+sequenceDiagram
+  participant B as Browser
+  participant R as /api/vault/attack
+  participant S as Upstash (shared store)
+  participant H as Harness + SERV
+  B->>R: channel + attack text (same-origin, ≤1,000 chars)
+  R->>S: rate limits (5 per visitor per hour, 20 per minute)
+  R->>S: reserve worst-case cost; refuse past the $5 cap
+  R->>H: runAttempt(Open Safe config, corpus-style task)
+  H-->>R: AttemptRecord + attemptHash
+  R->>S: refund to the visible estimate; feed += verdict + hash
+  R-->>B: verdict, tool calls, ledger, hashed record
+```
+
+- **Same task format as the corpus.** The visitor's text becomes an untrusted direct-chat part, a web page the agent must read, or an inbox message, around the same trusted invoice task.
+- **Same judge.** The deterministic oracle decides ROBBED or HELD, and the record verifies through `/api/verify`.
+- **Hard spending cap.** Each attempt reserves its worst-case visible cost in a shared Upstash counter *before* any model call, refused past $5.00; the unused part is refunded afterwards from the reported usage.
+- **Fail closed.** Without `SERV_API_KEY` or the store, the route returns `live_vault_offline` and never calls a model.
+- **Privacy.** The live feed (`/api/vault/status`) keeps only verdict, channel, time and record hash. The visitor IP is hashed for rate limiting and never stored raw.
+
 ## Kite Passport and x402
 
 Two layers keep a fooled agent's payments bounded outside the model:
@@ -254,6 +283,7 @@ Two layers keep a fooled agent's payments bounded outside the model:
    - The network (`eip155:2366`) and asset are pinned server-side, and amounts are capped.
    - A paid request must be bound locally to the quote (exact `payTo`, at least the quoted value) before it goes to the facilitator.
    - The route authorizes only on explicit `isValid` and `success` fields, never on HTTP status alone.
+3. **On-chain anchor.** One Kite testnet transaction carries the Merkle root over all 5,383 live records ([tx](https://testnet.kitescan.ai/tx/0x395577374ec313e0de97436181be4c39da317a15406efd8b570a49ab89492102)). `pnpm verify:runs` reads it back from the chain, and `/proof` links it.
 
 ## Web application and API surface
 
@@ -262,12 +292,13 @@ Pages (Next.js App Router, [`apps/web/app`](../apps/web/app)):
 | Route | Purpose |
 |---|---|
 | `/` | Scroll story with three.js scenes |
-| `/arena`, `/arena/attempt` | Vault ladder, same-attack matrix, Kite panel; the breach transcript |
-| `/proof` | Server-side hash, oracle and replay verification |
-| `/defense-curve` | Breach rate, upper bound and cost per defense |
+| `/rob` | Live vault: attack the real Open Safe vault on SERV |
+| `/arena`, `/arena/attempt` | Vault ladder, live CI re-verification badge, same-attack matrix, Kite panel; the breach transcript |
+| `/proof` | Server-side hash, oracle and replay verification; Kite anchor badge |
+| `/defense-curve` | Breach rate, upper bound and cost per defense; AgentDojo metrics table |
 | `/pod`, `/exploits` | Adaptive search tree; exploit file |
 | `/audit` | Policy audit plus measured model-layer results |
-| `/range` | Scripted practice range (fixtures, no inference) |
+| `/range` | Scripted practice range (fixtures, no inference); opens with two sample runs |
 | `/reports`, `/reports/adaptive` | In-browser inspectors for saved report files |
 
 API routes:
@@ -279,6 +310,8 @@ API routes:
 | `/api/practice` | POST | Scenario and mode (≤24 KB) | Scripted fixture run through the real harness |
 | `/api/verify` | POST | Attempt record (≤256 KB) | Recomputes the record hash; open to non-browser agents like `/api/audit` |
 | `/api/x402/payout` | GET/POST | `X-PAYMENT` header | Kite x402 quote, bind, verify and settle |
+| `/api/vault/attack` | POST | Channel + text (≤4 KB) | Same-origin browsers only; one live attempt under the shared cap and rate limits |
+| `/api/vault/status` | GET | none | Live counters, remaining budget and recent verdicts (no visitor text) |
 
 ## Security and trust boundaries
 
@@ -287,13 +320,15 @@ flowchart LR
   U[Browser] -- same-origin JSON,<br/>bounded body --> API[Next.js routes]
   API --> HAR[Harness / audit<br/>pure, in-memory]
   API -. x402 only .-> FAC[Pieverse facilitator]
+  API -- /api/vault/attack only,<br/>capped --> SV[SERV]
+  API --> KV[(Upstash: caps, feed)]
   ENG[Engine CLIs] -- explicit credit flag,<br/>reserved budgets --> PROV[SERV / Dolphin / Reppo]
   SEC[(.env.local)] --> ENG
 ```
 
 - **Request guard.** `assertLocalRequest` ([`lib/http.ts`](../apps/web/lib/http.ts)) accepts loopback, or an allowed deployment host whose `Origin` is exactly `https://<host>`. It rejects cross-site and non-JSON requests and never trusts forwarded headers.
-- **Body and rate limits.** JSON bodies are read with byte limits, a 5-second deadline and an in-flight reader cap. Per-instance rate windows apply to practice, verify and audit.
-- **No credentials on the site.** The deployed site needs no provider credentials. Live inference runs only from the engine CLIs, with `.env.local` loaded explicitly.
+- **Body and rate limits.** JSON bodies are read with byte limits, a 5-second deadline and an in-flight reader cap. Per-instance rate windows apply to practice, verify and audit; the live vault's limits live in the shared store, so they hold across instances.
+- **One provider credential on the site.** `SERV_API_KEY` is a sensitive Vercel environment variable used only by `/api/vault/attack`, behind the shared $5 cap. Benchmark inference still runs only from the engine CLIs, with `.env.local` loaded explicitly.
 - **Provider clients.** They suppress SDK debug logs, rebuild outbound headers, reject redirects and sanitize error bodies.
 - **Publication controls.** `.gitignore` and the Vercel `.vercelignore` allowlist keep `.heist/`, credentials, wallet state and private planning material out of Git and out of deployments.
 
@@ -304,7 +339,8 @@ flowchart LR
 | `packages/harness` | Ledger arithmetic, oracle cases, hashing, metrics, Merkle proofs |
 | `packages/serv`, `pod`, `reppo` | Client contracts against fake transports; budget and sanitization rules |
 | `apps/engine` | Corpus, plans, scheduling, budgets, verifiers, surrogate search, store adapter |
-| `apps/web` | Evidence re-derivation, Kite evidence, same-attack rows, audit outcomes and fixes, route guards and rate limits, x402 binding |
+| `apps/web` | Evidence re-derivation, AgentDojo metrics, Kite evidence, same-attack rows, audit outcomes and fixes, live-vault budget/rate limits/fail-closed, route guards (including non-browser agents), x402 binding |
+| `packages/mcp` | The real MCP server over stdio against a fake API: initialize, tools, audit, verify, proof, errors |
 
 GitHub Actions ([`.github/workflows/ci.yml`](../.github/workflows/ci.yml)) runs on every push: frozen install, strict typecheck, all tests, production build, the offline `pnpm demo`, the full-run verification `pnpm verify:runs` and a dependency audit.
 

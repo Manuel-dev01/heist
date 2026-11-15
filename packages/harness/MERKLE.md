@@ -1,6 +1,6 @@
 # Local attempt integrity proofs, version 1
 
-This is a local SHA-256 integrity commitment. It is not an on-chain anchor, timestamp authority, payment receipt, signature, or proof that an oracle verdict is correct. Verification is meaningful only against a root and record identity obtained from a trusted source.
+This is a local SHA-256 integrity commitment. By itself it is not an on-chain anchor, timestamp authority, payment receipt, signature, or proof that an oracle verdict is correct. (HEIST does anchor one root: the top root over all 5,383 runs-v1 records is carried by a [Kite testnet transaction](https://testnet.kitescan.ai/tx/0x395577374ec313e0de97436181be4c39da317a15406efd8b570a49ab89492102), checked by `pnpm verify:runs`.) Verification is meaningful only against a root and record identity obtained from a trusted source.
 
 Call `buildMerkleBatch(orderedAttemptHashes)`, `createMerkleProof(orderedAttemptHashes, leafIndex)`, and `verifyMerkleProof(proof, { rootHash, leafCount, attemptHash, leafIndex })`. Inputs allow 0–4096 lowercase 64-character SHA-256 hashes; membership requires 1–4096 leaves and an integer index in range. Proofs have `schemaVersion: 1`, algorithm `heist-sha256-ordered-v1`, and at most twelve steps. Unknown fields and unsupported versions fail validation.
 

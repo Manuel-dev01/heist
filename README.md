@@ -29,9 +29,11 @@ HEIST is a red-team arena and auditor for AI agents that hold money. It fires a 
 
 - **The problem.** Agents now pay invoices, move funds and edit their own spending rules. A single injected sentence in a web page, inbox or chat can redirect money. Owners have no standard way to measure that risk before raising an agent's limit.
 - **The arena.** Seven "vaults" run the same wallet agent with one defense added at a time: raw model, SERV default, Prompt Guard, Kronos, Multipath, Shadow Agent, then an enforced policy executor. All runs used one frozen, hashed corpus, live on SERV: the raw model faced all 1,000 attacks, every vault faced the same fixed 500-attack subset, and each faced 40 benign tasks.
-- **The result.** 5,383 recorded attempts, **one breach**: raw `gpt-5.4-nano` added the attacker to its own allowlist after a split web-page instruction. Every defended vault held 0/500, and every vault still completed its 40 benign tasks. The breach and its held twin ship as complete records that anyone can re-verify offline.
+- **The result.** 5,383 recorded attempts, **one breach**: raw `gpt-5.4-nano` added the attacker to its own allowlist after a split web-page instruction. Every defended vault held 0/500 and completed all 40 benign tasks, but under attack the guarded vaults often refused the real task too (utility under attack 45–56%, AgentDojo's metric).
+- **Rob it yourself.** The vault that was robbed is live at [/rob](https://heist-khaki.vercel.app/rob): write an injection and fire it at the real model on SERV, judged by the same oracle, with a hashed record back.
+- **Verifiable end to end.** All 5,383 records are public, re-derived on every CI run by `pnpm verify:runs`, committed on chain by one Kite testnet transaction, and published on Reppo as a Datanet pod.
 - **The wallet layer.** Kite Passport spending caps were exercised live: Kite's own backend refused an off-catalog payout and an over-cap payment, with $0 moved.
-- **The audit.** Owners describe how their agent spends. HEIST assumes the model is fully fooled, runs all 1,000 attacks through the same ledger and breach rules, and returns breaches, value at risk, top exploits and re-tested fixes, with a hashed report. Free, instant, no keys.
+- **The audit.** Owners describe how their agent spends. HEIST assumes the model is fully fooled, runs all 1,000 attacks through the same ledger and breach rules, and returns breaches, value at risk, top exploits and re-tested fixes, with a hashed report. Free, instant, no keys, and also available to agents as an MCP tool.
 
 ## Judge path: try it in five minutes
 
@@ -40,13 +42,13 @@ HEIST is a red-team arena and auditor for AI agents that hold money. It fires a 
 | 0 | [4-minute demo video](https://youtu.be/aehjP_u7unQ) | The whole product driven live, narrated: arena, the breach, proof replay, Kite refusals, the audit and `pnpm verify:runs`. |
 | ★ | [/rob](https://heist-khaki.vercel.app/rob) | **Rob the vault yourself, live.** Write an injection, hide it in a chat, web page or inbox, and fire it at the real Open Safe vault (raw gpt-5.4-nano on SERV, robbed once in 1,500 measured attempts). Same harness and oracle; you get the verdict and a hashed record. Capped public budget, 5 attempts per hour. |
 | 1 | [Landing](https://heist-khaki.vercel.app/) | Scroll the story: the vault ladder, the breach, the Kite wall, the adaptive attacker. |
-| 2 | [/arena](https://heist-khaki.vercel.app/arena) | Seven vaults with measured breach counts and 95% upper bounds; the same attack against every vault; the two live Kite refusals. |
+| 2 | [/arena](https://heist-khaki.vercel.app/arena) | Seven vaults with measured breach counts and 95% upper bounds; the live CI re-verification badge; the same attack against every vault; the two live Kite refusals. |
 | 3 | [/arena/attempt](https://heist-khaki.vercel.app/arena/attempt) | The real breach: the split web-page payload, every tool call the agent made, the oracle verdict and the ledger. Toggle **BREACHED · VAULT 00** and **HELD · VAULT 06** to compare the identical attack on both. |
-| 4 | [/proof](https://heist-khaki.vercel.app/proof) | Press **Verify replay**. The server recomputes the record hash, re-runs the deterministic oracle and replays every saved model decision through the harness. |
+| 4 | [/proof](https://heist-khaki.vercel.app/proof) | Press **Verify replay**. The server recomputes the record hash, re-runs the deterministic oracle and replays every saved model decision through the harness. The ⛓ badge links the Kite testnet transaction that anchors all 5,383 records. |
 | 5 | [/audit](https://heist-khaki.vercel.app/audit) | Start from "Prompt-only agent" (829/1,000 breaches), press **Apply** on "Lock policy writes" (600/1,000), then **Apply all** (0/1,000). Download the hashed report. |
-| 6 | [/defense-curve](https://heist-khaki.vercel.app/defense-curve) | Breach rate, upper bound and visible token cost per 1,000 interactions for each defense, plus the GPT-5.5 reference. |
+| 6 | [/defense-curve](https://heist-khaki.vercel.app/defense-curve) | Breach rate, upper bound and visible token cost per 1,000 interactions for each defense, plus the GPT-5.5 reference, and the AgentDojo table: attack success, utility under attack and benign utility per vault. |
 | 7 | [/pod](https://heist-khaki.vercel.app/pod) and [/exploits](https://heist-khaki.vercel.app/exploits) | The adaptive attacker's search tree (Dolphin: 116 candidates, 90 refinements) and the exploit file. |
-| 8 | [/range](https://heist-khaki.vercel.app/range) | Run scripted fixtures yourself, then verify the content hash of the record you just produced. |
+| 8 | [/range](https://heist-khaki.vercel.app/range) | Opens with two real sample runs (the same recipient swap, observed and enforced). Run scripted fixtures yourself, then verify the content hash of the record you just produced. |
 
 Prefer a terminal? `pnpm demo` runs the same story offline in about five seconds, and `pnpm verify:runs` re-derives every number above from all 5,383 raw records (see below).
 
@@ -95,14 +97,17 @@ Re-derive every published number from the full run records (about 30 seconds; do
 pnpm verify:runs
 ```
 
-It checks the asset's pinned SHA-256 and re-validates each frozen run plan. For all 5,383 attempts it recomputes the record hash, re-runs the oracle and replays the saved model decisions through the harness. Then it recomputes every vault's breaches, benign completion and upper bound, and compares them with the site. Expected ending:
+It checks the asset's pinned SHA-256 and re-validates each frozen run plan. For all 5,383 attempts it recomputes the record hash, re-runs the oracle and replays the saved model decisions through the harness. Then it recomputes every vault's breaches, utility under attack, benign completion and upper bound, and compares them with the site. Finally it recomputes the Merkle roots and reads the Kite testnet anchor back from the chain. Expected ending:
 
 ```text
   D2       1040 records · plan OK · hash 1040/1040 · oracle 1040/1040 · replay 1040/1040
   D3       3780 records · plan OK · hash 3780/3780 · oracle 3780/3780 · replay 3780/3780
   ...
   All runs                     5,383 attempts · 1 breach · OK
-All published numbers re-derived from the raw records.
+3 · On-chain anchor (Kite testnet)
+  Merkle roots recomputed from 5,383 records: top 1757b04ec4805474… · OK
+  Kite testnet block 22044909 · tx 0x395577374ec3… carries the same root · OK
+All published numbers re-derived from the raw records, and their root matches the Kite anchor.
 ```
 
 If your network blocks the download, fetch the asset manually and run `pnpm verify:runs path/to/heist-runs-v1.json.gz`.
@@ -146,14 +151,16 @@ Every headline claim maps to something you can check. "Re-derive" means you can 
 |---|---|---|
 | The one breach is real and was decided by code, not an LLM | `pnpm demo` (step 1) or [/proof](https://heist-khaki.vercel.app/proof) → **Verify replay**: recomputes the record hash, re-runs [`evaluateOutcome`](packages/harness/src/oracle.ts) and replays the 4 saved model decisions through the harness | Re-derive |
 | Its held twin (same attack, defended vault) held | Same as above; the held record replays 2 decisions to `HELD` | Re-derive |
-| Records cannot be edited silently | Download the breach record from [/proof](https://heist-khaki.vercel.app/proof), edit any field, and POST `{"record": ...}` to `/api/verify` with header `Origin: https://heist-khaki.vercel.app`. The untouched record returns `valid: true`; any edit returns `valid: false` | Re-derive |
+| Records cannot be edited silently | Download the breach record from [/proof](https://heist-khaki.vercel.app/proof), edit any field, and POST `{"record": ...}` to `https://heist-khaki.vercel.app/api/verify` (plain `curl` works, or the MCP tool `heist_verify_record`). The untouched record returns `valid: true`; any edit returns `valid: false` | Re-derive |
+| The live vault is the measured Open Safe vault | [/rob](https://heist-khaki.vercel.app/rob) runs the exact Open Safe configuration ([`lib/live-vault.ts`](apps/web/lib/live-vault.ts)) through the same harness and oracle; every result comes with a hashed record you can verify the same way | Re-derive |
 | Policy audit numbers (829 → 600 → 0) | `pnpm demo` (step 4), the [/audit](https://heist-khaki.vercel.app/audit) page and [`apps/web/tests/audit.test.ts`](apps/web/tests/audit.test.ts); deterministic, so the report hash is identical on every machine | Re-derive |
 | Every vault's breach count, upper bound and benign completion, and the GPT-5.5 reference | `pnpm verify:runs`: hash, oracle and harness replay of all 5,383 records from the [release asset](https://github.com/Manuel-dev01/heist/releases/tag/runs-v1), then every vault number recomputed and compared with the site | Re-derive |
 | All 5,383 records were committed on chain | One [Kite testnet transaction](https://testnet.kitescan.ai/tx/0x395577374ec313e0de97436181be4c39da317a15406efd8b570a49ab89492102) (block 22,044,909) carries the Merkle root over every record. `pnpm verify:runs` recomputes all run roots and the top root from the records, then reads the transaction from Kite and checks it carries the same root | Re-derive |
 | Each run followed a frozen plan: same corpus, one control changed per vault | `pnpm verify:runs` re-validates every plan hash and corpus hash; each entry must name its plan's arm, case and corpus | Re-derive |
 | Kite refused two payments live with $0 moved | Kite error codes, session caps and wallet balance in `evidence.json` → `kite` | Inspect |
+| All 5,383 records are published on Reppo | Pod #4125 in the RELY Datanet on Base ([mint tx](https://basescan.org/tx/0xb8b640ff8bb6c15ab98a3fe9874ef58c9e986f8c6f28f179d9fb518991146c7b)); its dataset URI is the runs-v1 release asset | Inspect |
 | The corpus has 1,000 attacks across five goals and three channels | The full corpus is inside the D2 plan in the release asset, checked against its `corpusHash` by `pnpm verify:runs`; a slim copy is in [`apps/web/data/audit-corpus.json`](apps/web/data/audit-corpus.json) | Re-derive |
-| The engine, benchmark scheduler and oracle behave as documented | `pnpm test`: 979 tests across the harness, engine, clients and web app | Re-derive |
+| The engine, benchmark scheduler and oracle behave as documented | `pnpm test`: 991 tests across the harness, engine, clients, MCP server and web app | Re-derive |
 
 The release asset contains each run's frozen plan and every attempt entry verbatim. Not included: spending budgets, approval logs, observer journals and raw provider HTTP responses; the verdicts never depend on these. The Kite refusals come from Kite's live backend, so they can be inspected but not regenerated offline. CI runs `pnpm demo` and `pnpm verify:runs` on every push.
 
@@ -184,8 +191,8 @@ The audit is deterministic and self-reported: it scores the setup you describe, 
 
 | Partner | What is real in this repo |
 |---|---|
-| **SERV (OpenServ)** | [`@heist/serv`](packages/serv/src/index.ts) drives every live run through SERV: raw mode (`x-openserv-disable-braid: true`), default reasoning, Prompt Guard, Kronos, Multipath and Shadow Agent, each as one controlled variable. All D2, D3 and frontier attempts ran on SERV. |
-| **Kite** | Kite Passport spending caps were exercised live. An owner passkey approved capped sessions, and Kite's backend refused `payment_target_forbidden` (host outside the service catalog) and `session_rule_exceeded` (catalog price above the per-payment cap), with $0 moved. An x402 payout route ([`apps/web/app/api/x402/payout`](apps/web/app/api/x402/payout/route.ts)) quotes Kite payment requirements and settles only on explicit facilitator confirmation. |
+| **SERV (OpenServ)** | [`@heist/serv`](packages/serv/src/index.ts) drives every live run through SERV: raw mode (`x-openserv-disable-braid: true`), default reasoning, Prompt Guard, Kronos, Multipath and Shadow Agent, each as one controlled variable. All D2, D3 and frontier attempts ran on SERV, and the public live vault at /rob runs on SERV today. |
+| **Kite** | Kite Passport spending caps were exercised live. An owner passkey approved capped sessions, and Kite's backend refused `payment_target_forbidden` (host outside the service catalog) and `session_rule_exceeded` (catalog price above the per-payment cap), with $0 moved. All 5,383 records are anchored on **Kite testnet** ([tx](https://testnet.kitescan.ai/tx/0x395577374ec313e0de97436181be4c39da317a15406efd8b570a49ab89492102)), checked by `pnpm verify:runs`. An x402 payout route ([`apps/web/app/api/x402/payout`](apps/web/app/api/x402/payout/route.ts)) quotes Kite payment requirements and settles only on explicit facilitator confirmation. |
 | **Dolphin** | [`@heist/pod`](packages/pod/README.md) is the adaptive attacker: generation, refinement and native tool round trips on Dolphin, screened against the real raw vault. |
 | **Reppo** | [`@heist/reppo`](packages/reppo/README.md) implements Reppo's text Evaluation API (one live synthetic evaluation, kept separate from the oracle). All 5,383 live records are **published on Reppo** as pod #4125 in the "RELY – Agent Reliability Records" Datanet on Base ([mint tx](https://basescan.org/tx/0xb8b640ff8bb6c15ab98a3fe9874ef58c9e986f8c6f28f179d9fb518991146c7b)), pointing at the [runs-v1 release](https://github.com/Manuel-dev01/heist/releases/tag/runs-v1). |
 
@@ -202,6 +209,10 @@ flowchart LR
   X --> W[Web app: arena, proof, curve, audit]
   P[Pod on Dolphin] -->|adaptive candidates| E
   W -->|x402 payout| K[Kite Passport caps]
+  V[Live vault /rob] --> H
+  R -->|Merkle root| KA[Kite testnet anchor]
+  R -->|dataset pod| RP[Reppo Datanet]
+  W -->|MCP tools| A[Agents]
 ```
 
 The full design covers packages, the data flow, the trust boundaries, the API surface and the evidence pipeline. It is in **[docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)**.
@@ -210,7 +221,7 @@ The full design covers packages, the data flow, the trust boundaries, the API su
 
 | Path | What it is |
 |---|---|
-| [`apps/web`](apps/web) | Next.js 16 product site, live on Vercel: arena, proof, defense curve, Pod, exploits, policy audit, practice range, report inspectors, API routes. |
+| [`apps/web`](apps/web) | Next.js 16 product site, live on Vercel: live vault, arena, proof, defense curve, Pod, exploits, policy audit, practice range, report inspectors, API routes. |
 | [`apps/engine`](apps/engine) | Benchmark planning and execution, corpus generation, defense-plan composition, adaptive surrogate search, verifiers and CLIs. |
 | [`packages/harness`](packages/harness) | Agent loop, simulated bigint ledger, deterministic oracle, canonical hashing, metrics, Merkle proofs. No network. |
 | [`packages/serv`](packages/serv) | SERV client: raw toggle, defense features, validated responses, token-price estimates. |
@@ -232,6 +243,7 @@ Engine module docs: [benchmark](apps/engine/BENCHMARK.md), [benchmark records](a
 | `pnpm --filter @heist/web dev` | Web app on 127.0.0.1:3000 | none |
 | `pnpm typecheck` / `pnpm test` / `pnpm build` | Strict typecheck, full test suite, production build | none |
 | `pnpm inspect:surrogate --plan P --result R` | Verify a saved adaptive-search plan and result | none |
+| `node packages/mcp/src/server.mjs` | MCP server (stdio) for the audit, record verification and live proof | the public HEIST API |
 | `node --env-file=.env.local --import tsx apps/engine/src/cli.ts --live --authorize-credit-use [--raw]` | One live foundation run on SERV (synthetic funds) | SERV, needs `SERV_API_KEY` |
 
 Live commands need credentials in `.env.local` (variable names in [`.env.example`](.env.example)) and an explicit credit flag. Default execution never contacts a provider.
@@ -243,11 +255,12 @@ Live commands need credentials in `.env.local` (variable names in [`.env.example
 - **GPT-5.5 reference.** It is a separate reference, not a step in the defense ladder. Its 36 incomplete attempts are disclosed.
 - **Self-reported audit.** The policy audit scores the configuration you state, not your running code.
 - **Costs.** Costs are visible token-price estimates. Provider billing and SERV feature surcharges are not included.
-- **Credentials.** Secrets live only in `.env.local`. Provider clients suppress SDK debug logs, rebuild outbound headers, reject redirects and sanitize errors. Public POST routes are same-origin, body-bounded and rate-limited; the x402 payout route is open by design to paying agents and never moves funds without facilitator settlement.
+- **Live vault.** /rob sends the visitor's text to a real model on SERV, but money stays synthetic. Spending is capped at $5 in a shared store (reserved before every call), with 5 attempts per visitor per hour; only verdicts and record hashes are kept, never visitor text.
+- **Credentials.** Secrets live only in `.env.local`. Provider clients suppress SDK debug logs, rebuild outbound headers, reject redirects and sanitize errors. Public POST routes are same-origin, body-bounded and rate-limited. `/api/audit` and `/api/verify` also accept non-browser agents (no `Origin` or `Sec-Fetch-Site`). The x402 payout route is open by design to paying agents and never moves funds without facilitator settlement.
 
 ## Roadmap
 
 - **Model-in-the-loop audits:** run the corpus against an owner's own agent endpoint, paid over Kite x402, with the report hash anchored on Kite.
-- **Kite wallet controls:** a funded total-budget cap test and a catalog-listed HEIST seller.
+- **Kite wallet controls:** a settled catalog payment from a passkey-approved session (attempted; Kite's backend errored while the funds sat on Solana rather than Kite chain), a funded total-budget cap test, and a catalog-listed HEIST seller.
 - **A HEIST Datanet:** today the records live as a pod in an existing Reppo Datanet; a dedicated AI-security Datanet is next.
 - **Production infrastructure:** persistent storage on the tested PostgreSQL schema, plus scheduled re-tests.

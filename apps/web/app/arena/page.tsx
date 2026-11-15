@@ -61,7 +61,7 @@ export default function ArenaPage() {
               </div>
             ))}
           </div>
-          <Footnote>Vault 00 combines both raw runs: D2 (all 1,000 attacks) and the D3 raw arm (the same 500-attack subset). The breach did not reproduce when the identical attack ran again on raw nano in D3. Live paid attempts over x402 are planned; this range replays recorded evidence. {evidence.disclaimer}</Footnote>
+          <Footnote>Vault 00 combines both raw runs: D2 (all 1,000 attacks) and the D3 raw arm (the same 500-attack subset). The breach did not reproduce when the identical attack ran again on raw nano in D3. This page shows recorded evidence from the closed runs. To attack the same raw vault live, go to <a href="/rob" style={{ textDecoration: 'underline' }}>/rob</a>. {evidence.disclaimer}</Footnote>
         </div>
       </div>
     </Page>

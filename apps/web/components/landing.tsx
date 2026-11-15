@@ -250,7 +250,7 @@ export class Landing extends Component {
               <div style={css('display:flex;flex-direction:column;gap:16px;max-width:340px')}>
                 <div style={css('font-size:18px;color:#b9bec6;line-height:1.4')}>Rob the agent. Prove the defense. Seven vaults under watch. Scroll to follow the heist.</div>
                 <div style={css('display:flex;gap:10px;flex-wrap:wrap')}>
-                  <a href="/arena" style={css(`background:${R};color:#07080a;font-weight:700;padding:14px 20px;font-size:15px`)}>Enter the arena</a>
+                  <a href="/rob" style={css(`background:${R};color:#07080a;font-weight:700;padding:14px 20px;font-size:15px`)}>Rob it live</a><a href="/arena" style={css('border:1px solid #e9ebee;color:#e9ebee;font-weight:600;padding:13px 20px;font-size:15px')}>Enter the arena</a>
                   <a href="/audit" style={css('border:1px solid #e9ebee;color:#e9ebee;font-weight:600;padding:13px 20px;font-size:15px')}>Audit my agent</a>
                 </div>
               </div>
@@ -329,7 +329,7 @@ export class Landing extends Component {
         <div id="vaults" style={css('padding:clamp(56px,10vw,120px) clamp(18px,4vw,48px);display:flex;flex-direction:column;gap:40px;max-width:1280px;margin:0 auto')}>
           <div style={css('display:flex;justify-content:space-between;align-items:flex-end;gap:24px;flex-wrap:wrap')}>
             <div style={css('font-weight:700;font-size:clamp(36px,5vw,72px);line-height:.95;letter-spacing:-.03em;max-width:12ch')}>Pick a vault. Try to rob it.</div>
-            <div style={css('display:flex;gap:10px;flex-wrap:wrap')}><a href="/arena" style={css(`background:${R};color:#07080a;font-weight:700;padding:14px 20px`)}>Enter the arena</a><a href="/defense-curve" style={css('border:1px solid #e9ebee;color:#e9ebee;font-weight:600;padding:13px 20px')}>See the Defense Curve</a></div>
+            <div style={css('display:flex;gap:10px;flex-wrap:wrap')}><a href="/rob" style={css(`background:${R};color:#07080a;font-weight:700;padding:14px 20px`)}>Rob it live</a><a href="/arena" style={css('border:1px solid #e9ebee;color:#e9ebee;font-weight:600;padding:13px 20px')}>Enter the arena</a><a href="/defense-curve" style={css('border:1px solid #e9ebee;color:#e9ebee;font-weight:600;padding:13px 20px')}>See the Defense Curve</a></div>
           </div>
           <div style={css('display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px')}>
             {ARMS.map((a) => (
