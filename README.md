@@ -187,7 +187,7 @@ The audit is deterministic and self-reported: it scores the setup you describe, 
 | **SERV (OpenServ)** | [`@heist/serv`](packages/serv/src/index.ts) drives every live run through SERV: raw mode (`x-openserv-disable-braid: true`), default reasoning, Prompt Guard, Kronos, Multipath and Shadow Agent, each as one controlled variable. All D2, D3 and frontier attempts ran on SERV. |
 | **Kite** | Kite Passport spending caps were exercised live. An owner passkey approved capped sessions, and Kite's backend refused `payment_target_forbidden` (host outside the service catalog) and `session_rule_exceeded` (catalog price above the per-payment cap), with $0 moved. An x402 payout route ([`apps/web/app/api/x402/payout`](apps/web/app/api/x402/payout/route.ts)) quotes Kite payment requirements and settles only on explicit facilitator confirmation. |
 | **Dolphin** | [`@heist/pod`](packages/pod/README.md) is the adaptive attacker: generation, refinement and native tool round trips on Dolphin, screened against the real raw vault. |
-| **Reppo** | [`@heist/reppo`](packages/reppo/README.md) implements Reppo's text Evaluation API. One authorized synthetic evaluation completed live. Its panel judgment is kept separate from HEIST's deterministic oracle. |
+| **Reppo** | [`@heist/reppo`](packages/reppo/README.md) implements Reppo's text Evaluation API (one live synthetic evaluation, kept separate from the oracle). All 5,383 live records are **published on Reppo** as pod #4125 in the "RELY – Agent Reliability Records" Datanet on Base ([mint tx](https://basescan.org/tx/0xb8b640ff8bb6c15ab98a3fe9874ef58c9e986f8c6f28f179d9fb518991146c7b)), pointing at the [runs-v1 release](https://github.com/Manuel-dev01/heist/releases/tag/runs-v1). |
 
 ## Architecture
 
@@ -249,5 +249,5 @@ Live commands need credentials in `.env.local` (variable names in [`.env.example
 
 - **Model-in-the-loop audits:** run the corpus against an owner's own agent endpoint, paid over Kite x402, with the report hash anchored on Kite.
 - **Kite wallet controls:** a funded total-budget cap test and a catalog-listed HEIST seller.
-- **Exploit Datanet:** publish winning adaptive exploits to a Reppo Datanet.
+- **A HEIST Datanet:** today the records live as a pod in an existing Reppo Datanet; a dedicated AI-security Datanet is next.
 - **Production infrastructure:** persistent storage on the tested PostgreSQL schema, plus scheduled re-tests.

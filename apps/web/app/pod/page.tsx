@@ -59,7 +59,7 @@ export default function PodPage() {
           </div>
         )}
         <div style={css(`border-top:1px solid ${C.line};padding:14px clamp(16px,2.4vw,28px) 40px;display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap`)}>
-          <Footnote>Rewrites generated with Dolphin · screened on the raw SERV vault · fired through the same deterministic oracle. Publishing winners to a Reppo Datanet is planned.</Footnote>
+          <Footnote>Rewrites generated with Dolphin · screened on the raw SERV vault · fired through the same deterministic oracle. All 5,383 live records are published on Reppo as pod #4125 in the RELY Agent Reliability Records datanet (<a href="https://basescan.org/tx/0xb8b640ff8bb6c15ab98a3fe9874ef58c9e986f8c6f28f179d9fb518991146c7b" style={{ textDecoration: 'underline' }}>Base tx</a>).</Footnote>
         </div>
       </div>
     </Page>
