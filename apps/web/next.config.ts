@@ -4,6 +4,8 @@ const config: NextConfig = {
   devIndicators: false,
   reactStrictMode: true,
   transpilePackages: ['@heist/harness'],
+  // Deploy builds type-check app code only; tests and scripts are type-checked by `pnpm typecheck`.
+  typescript: { tsconfigPath: 'tsconfig.build.json' },
   async headers() {
     return [{ source: '/:path*', headers: [
       { key: 'X-Content-Type-Options', value: 'nosniff' },
