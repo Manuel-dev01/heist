@@ -3,6 +3,16 @@ import { hashAttemptRecord } from '@heist/harness';
 import { evidence } from '../lib/evidence';
 import { verifyEvidence } from '../lib/proof';
 
+describe('AgentDojo metrics in the bundled evidence', () => {
+  it('reports utility under attack per setup, consistent with the attack counts', () => {
+    const ua = evidence.arms.map((a) => a.utilityUnderAttack);
+    expect(ua).toEqual([500, 500, 225, 229, 280, 275, 280]);
+    expect(evidence.arms[0]!.combined!.utilityUnderAttack).toBe(1500);
+    expect(evidence.frontier.utilityUnderAttack).toBe(482);
+    for (const a of evidence.arms) expect(a.utilityUnderAttack).toBeLessThanOrEqual(a.attacks);
+  });
+});
+
 describe('bundled real evidence', () => {
   it('re-derives the breach and the held record: hash, deterministic oracle and full harness replay', async () => {
     for (const which of ['breach', 'held'] as const) {

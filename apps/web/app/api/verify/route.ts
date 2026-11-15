@@ -6,9 +6,10 @@ export const dynamic = 'force-dynamic';
 const InputSchema = z.object({ record: z.unknown() }).strict();
 export async function POST(request: Request): Promise<Response> {
   try {
-    assertLocalRequest(request);
+    // Agent-facing: also open to non-browser clients (e.g. the HEIST MCP server).
+    assertLocalRequest(request, process.env, { allowNonBrowser: true });
     consumeLocalLimit('verify');
-    const input = InputSchema.safeParse(await readBoundedJson(request, 256000));
+    const input = InputSchema.safeParse(await readBoundedJson(request, 256000, { allowNonBrowser: true }));
     if (!input.success) return jsonResponse({ error: 'invalid_verification_input' }, 400);
     const record = AttemptRecordSchema.safeParse(input.data.record);
     if (!record.success) return jsonResponse({ valid: false });

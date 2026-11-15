@@ -123,13 +123,13 @@ console.log('\n' + bold('2 · Recompute what the site shows') + '\n' + dim('─'
 const d2 = byRun.D2 ?? [], d3 = byRun.D3 ?? [], fr5 = byRun['REF-v5'] ?? [], fr6 = byRun['REF-v6'] ?? [];
 const sum = (es: Entry[]) => {
   const atk = es.filter((e) => e.metadata.suite === 'attack'), ben = es.filter((e) => e.metadata.suite === 'benign'), k = atk.filter((e) => breached(e.record)).length;
-  return { attacks: atk.length, breaches: k, upper95: upper95(k, atk.length), benign: ben.length, benignOk: ben.filter((e) => e.record.oracle.utilitySuccess).length, incomplete: atk.filter((e) => e.record.outcome === 'error').length };
+  return { attacks: atk.length, breaches: k, upper95: upper95(k, atk.length), utilityUnderAttack: atk.filter((e) => e.record.oracle.utilitySuccess).length, benign: ben.length, benignOk: ben.filter((e) => e.record.oracle.utilitySuccess).length, incomplete: atk.filter((e) => e.record.outcome === 'error').length };
 };
-const compare = (label: string, got: ReturnType<typeof sum>, shown: { attacks: number; breaches: number; upper95: number; benign?: number; benignOk?: number; incomplete?: number }) => {
-  const ok = got.attacks === shown.attacks && got.breaches === shown.breaches && Math.abs(got.upper95 - shown.upper95) < 1e-12
+const compare = (label: string, got: ReturnType<typeof sum>, shown: { attacks: number; breaches: number; upper95: number; utilityUnderAttack: number; benign?: number; benignOk?: number; incomplete?: number }) => {
+  const ok = got.attacks === shown.attacks && got.breaches === shown.breaches && Math.abs(got.upper95 - shown.upper95) < 1e-12 && got.utilityUnderAttack === shown.utilityUnderAttack
     && (shown.benign === undefined || (got.benign === shown.benign && got.benignOk === shown.benignOk)) && (shown.incomplete === undefined || got.incomplete === shown.incomplete);
   if (!ok) fail(`${label}: recomputed ${JSON.stringify(got)} differs from the site ${JSON.stringify(shown)}`);
-  console.log(`  ${label.padEnd(28)} ${(got.breaches ? red : teal)(`${got.breaches} / ${got.attacks}`.padEnd(11))} ≤${(got.upper95 * 100).toFixed(2)}%${got.benign ? ` · benign ${got.benignOk}/${got.benign}` : ''}${got.incomplete ? dim(` · ${got.incomplete} incomplete`) : ''} · ${mark(ok)}`);
+  console.log(`  ${label.padEnd(28)} ${(got.breaches ? red : teal)(`${got.breaches} / ${got.attacks}`.padEnd(11))} ≤${(got.upper95 * 100).toFixed(2)}% · UA ${((got.utilityUnderAttack / got.attacks) * 100).toFixed(1)}%${got.benign ? ` · benign ${got.benignOk}/${got.benign}` : ''}${got.incomplete ? dim(` · ${got.incomplete} incomplete`) : ''} · ${mark(ok)}`);
 };
 for (const arm of evidence.arms) compare(`Vault ${arm.n} ${arm.name} (D3)`, sum(d3.filter((e) => e.armId === arm.id)), arm);
 const rawAll = sum([...d2, ...d3.filter((e) => e.armId === 'raw')].filter((e) => e.metadata.suite === 'attack'));

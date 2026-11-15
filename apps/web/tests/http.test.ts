@@ -141,3 +141,19 @@ describe('public same-origin boundary for the scripted range', () => {
     bad({ host: 'heist-khaki.vercel.app', origin: 'https://heist-khaki.vercel.app', 'x-forwarded-host': 'evil.example', 'content-type': 'text/plain' }, 'json_required');
   });
 });
+
+describe('non-browser clients on agent-facing routes', () => {
+  const env = { HEIST_PUBLIC_HOSTS: 'heist.example' };
+  const agentReq = (headers: Record<string, string>) => new Request('https://heist.example/api/audit', { method: 'POST', headers: { host: 'heist.example', 'content-type': 'application/json', ...headers }, body: '{}' });
+  it('accepts a request with no Origin and no Sec-Fetch headers only when allowed', () => {
+    expect(() => assertLocalRequest(agentReq({}), env, { allowNonBrowser: true })).not.toThrow();
+    expect(() => assertLocalRequest(agentReq({}), env)).toThrow();
+  });
+  it('still rejects browser cross-site requests and foreign hosts', () => {
+    expect(() => assertLocalRequest(agentReq({ origin: 'https://evil.example' }), env, { allowNonBrowser: true })).toThrow();
+    expect(() => assertLocalRequest(agentReq({ 'sec-fetch-site': 'cross-site' }), env, { allowNonBrowser: true })).toThrow();
+    expect(() => assertLocalRequest(agentReq({ 'sec-fetch-mode': 'cors' }), env, { allowNonBrowser: true })).toThrow();
+    const foreign = new Request('https://other.example/api/audit', { method: 'POST', headers: { host: 'other.example', 'content-type': 'application/json' }, body: '{}' });
+    expect(() => assertLocalRequest(foreign, env, { allowNonBrowser: true })).toThrow();
+  });
+});

@@ -1,0 +1,10 @@
+{
+  "name": "@heist/mcp",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "MCP server for HEIST: let an agent audit its own spending setup against 1,000 prompt-injection attacks.",
+  "bin": { "heist-mcp": "./src/server.mjs" },
+  "engines": { "node": ">=22" },
+  "scripts": { "test": "vitest run" }
+}

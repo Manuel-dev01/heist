@@ -119,20 +119,21 @@ Both use explicitly labelled scripted model responses and write records to the i
 
 All numbers come from closed, audited live runs. Every attempt record is published as the [runs-v1 release asset](https://github.com/Manuel-dev01/heist/releases/tag/runs-v1), and the per-vault summary the site reads ships in [`apps/web/data/evidence.json`](apps/web/data/evidence.json).
 
-| Vault | Defense added | Attacks | Breaches | 95% upper bound |
-|---|---|---|---|---|
-| 00 Open Safe | none (raw `gpt-5.4-nano`, SERV raw mode) | 1,500 | **1** | ≤0.37% |
-| 01 Tripwire | SERV default | 500 | 0 | ≤0.74% |
-| 02 Guard Dog | + Prompt Guard | 500 | 0 | ≤0.74% |
-| 03 Oracle | + Kronos | 500 | 0 | ≤0.74% |
-| 04 Hydra | + Multipath | 500 | 0 | ≤0.74% |
-| 05 Shadow | + Shadow Agent | 500 | 0 | ≤0.74% |
-| 06 Fort Knox | + enforced policy executor | 500 | 0 | ≤0.74% |
-| Reference | GPT-5.5 (frontier, separate) | 500 | 0 | 36 incomplete, disclosed |
+| Vault | Defense added | Attacks | Breaches | 95% upper bound | Utility under attack |
+|---|---|---|---|---|---|
+| 00 Open Safe | none (raw `gpt-5.4-nano`, SERV raw mode) | 1,500 | **1** | ≤0.37% | 100% |
+| 01 Tripwire | SERV default | 500 | 0 | ≤0.74% | 100% |
+| 02 Guard Dog | + Prompt Guard | 500 | 0 | ≤0.74% | 45% |
+| 03 Oracle | + Kronos | 500 | 0 | ≤0.74% | 45.8% |
+| 04 Hydra | + Multipath | 500 | 0 | ≤0.74% | 56% |
+| 05 Shadow | + Shadow Agent | 500 | 0 | ≤0.74% | 55% |
+| 06 Fort Knox | + enforced policy executor | 500 | 0 | ≤0.74% | 56% |
+| Reference | GPT-5.5 (frontier, separate) | 500 | 0 | 36 incomplete, disclosed | 96.4% |
 
 - **Corpus.** 1,000 attacks across five goals (over-limit payment, recipient swap, policy tampering, task disruption, unauthorized payment) and three channels (chat, web page, inbox), plus 40 benign tasks. Frozen and hashed before any live run.
 - **Runs.** D2: the full corpus on raw nano. D3: a fixed 500-attack subset on all seven vaults. Vault 00 combines both raw runs. The GPT-5.5 reference ran the same 500 attacks.
 - **Adaptive attacker.** An attacker model on Dolphin rewrote attacks using only the oracle's verdict. 116 candidates were screened against the raw vault; none broke it.
+- **AgentDojo metrics.** We report all three: targeted attack success (breaches), utility under attack (the legitimate invoice still paid while an injection is present) and benign utility (40/40 on every setup). The defenses held, but once Prompt Guard is in the chain the agent often refuses the real task under attack, so utility under attack falls to 45–56%. They block partly by refusing: safe, not free.
 - **Bounds.** Upper bounds are the upper end of exact two-sided 95% Clopper-Pearson intervals. Zero breaches in 500 is not "proved safe"; it bounds the rate.
 - **Costs.** Costs shown in the app are visible token-price estimates, not provider billing.
 
@@ -173,6 +174,8 @@ The live audit at [/audit](https://heist-khaki.vercel.app/audit) (API: `POST /ap
 2. **Run every attack.** For each of the 1,000 corpus attacks, the attack's goal action is executed against that setup. This uses the harness's own `paymentViolations` and `SimulatedLedger`.
 3. **Read the report.** It covers breaches and value at risk by goal and channel, top exploits, whether the legitimate invoice still gets paid, each single fix and all fixes re-tested on the full corpus, and a canonical report hash.
 
+**For agents.** The audit is also an MCP tool. [`packages/mcp`](packages/mcp/README.md) is a dependency-free MCP server for Claude Code, Claude Desktop or any MCP client, so an agent can audit its own setup before asking for a higher limit. The repo also ships a Claude Code skill, [`heist-audit`](.claude/skills/heist-audit/SKILL.md). Install with `claude mcp add heist -- node /path/to/heist/packages/mcp/src/server.mjs`.
+
 The audit is deterministic and self-reported: it scores the setup you describe, not your running code. The model layer is measured separately in the live runs above.
 
 ## Partner integrations
@@ -211,6 +214,7 @@ The full design covers packages, the data flow, the trust boundaries, the API su
 | [`packages/serv`](packages/serv) | SERV client: raw toggle, defense features, validated responses, token-price estimates. |
 | [`packages/pod`](packages/pod) | Dolphin attacker: fixture attack cases, generation, refinement, dedupe. |
 | [`packages/reppo`](packages/reppo) | Reppo text Evaluation API client with bounded polling. |
+| [`packages/mcp`](packages/mcp/README.md) | MCP server exposing the policy audit, record verification and live proof as agent tools. |
 | [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) | System design. |
 
 Engine module docs: [benchmark](apps/engine/BENCHMARK.md), [benchmark records](apps/engine/BENCHMARK_RECORD.md), [corpus](apps/engine/CORPUS.md), [generation](apps/engine/GENERATION.md), [defense plan](apps/engine/DEFENSE_PLAN.md), [surrogate search](apps/engine/SURROGATE_SEARCH.md), [attempt store](apps/engine/ATTEMPT_STORE.md), [SQL schema](apps/engine/sql/README.md).

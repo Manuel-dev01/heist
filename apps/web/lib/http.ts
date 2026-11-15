@@ -13,8 +13,11 @@ export function allowedPublicHosts(env: Record<string, string | undefined> = pro
  * Loopback: Origin must match the actual loopback Host and port. Public: the Host must be an allowed
  * deployment host and the browser Origin must be exactly https://<host>. Cross-site requests and
  * non-JSON bodies are always rejected; forwarded headers are never trusted.
+ * allowNonBrowser (agent-facing routes only): a request with no Origin and no Sec-Fetch-* headers is a
+ * non-browser client such as an MCP tool. Browsers always send these on cross-site POSTs, so CSRF stays blocked.
  */
-export function assertLocalRequest(request: Request, env: Record<string, string | undefined> = process.env): void {
+export interface GuardOptions { allowNonBrowser?: boolean }
+export function assertLocalRequest(request: Request, env: Record<string, string | undefined> = process.env, opts: GuardOptions = {}): void {
   const url = new URL(request.url);
   const authority = (request.headers.get('host') ?? url.host).toLowerCase();
   const origin = request.headers.get('origin');
@@ -28,7 +31,8 @@ export function assertLocalRequest(request: Request, env: Record<string, string 
     if (origin && origin !== external.origin) throw new RequestInputError(403, 'origin_rejected');
   } else {
     if (!allowedPublicHosts(env).has(authority)) throw new RequestInputError(403, 'host_not_allowed');
-    if (origin !== 'https://' + authority) throw new RequestInputError(403, 'origin_rejected');
+    const nonBrowser = opts.allowNonBrowser === true && origin === null && !request.headers.get('sec-fetch-site') && !request.headers.get('sec-fetch-mode');
+    if (!nonBrowser && origin !== 'https://' + authority) throw new RequestInputError(403, 'origin_rejected');
   }
   if (request.headers.get('sec-fetch-site') === 'cross-site') throw new RequestInputError(403, 'origin_rejected');
   const contentType = request.headers.get('content-type')?.split(';')[0]?.trim().toLowerCase();
@@ -44,8 +48,8 @@ function cancelBodySafely(body: ReadableStream<Uint8Array> | null): void {
   try { void body.cancel().catch(() => {}); } catch { /* Cancellation is best-effort. */ }
 }
 
-export async function readBoundedJson(request: Request, maxBytes: number): Promise<unknown> {
-  assertLocalRequest(request);
+export async function readBoundedJson(request: Request, maxBytes: number, opts: GuardOptions = {}): Promise<unknown> {
+  assertLocalRequest(request, process.env, opts);
   if (!Number.isSafeInteger(maxBytes) || maxBytes < 1 || maxBytes > 2_097_152)
     throw new RequestInputError(500, 'invalid_body_limit');
   if (request.signal.aborted) {

@@ -4,7 +4,9 @@ import type { AttemptRecord, HarnessConfig, Task } from '@heist/harness';
 export interface ArmSummary {
   id: string; n: string; name: string; layer: string;
   attacks: number; breaches: number; upper95: number; benign: number; benignOk: number; incomplete: number; visibleCostPer1kUsd: number | null;
-  combined?: { attacks: number; breaches: number; upper95: number; note: string };
+  /** AgentDojo "utility under attack": attack attempts in which the legitimate task still completed. */
+  utilityUnderAttack: number;
+  combined?: { attacks: number; breaches: number; upper95: number; utilityUnderAttack: number; note: string };
   incompleteBreakdown?: Record<string, number>;
 }
 export interface EvidenceRecord {
