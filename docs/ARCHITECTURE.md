@@ -188,18 +188,28 @@ Batches of records can be committed to a Merkle root ([`MERKLE.md`](../packages/
 
 ```mermaid
 flowchart LR
-  RUNS[(Closed live runs<br/>private .heist/ artifacts)] --> AUD[Independent audits<br/>per run scope]
-  AUD --> B[Sanitizing evidence builder<br/>private, not published]
+  RUNS[(Closed live runs<br/>.heist/ artifacts)] --> AUD[Independent audits<br/>per run scope]
+  AUD --> EXP[Run exporter]
+  EXP --> REL[GitHub release runs-v1<br/>4 frozen plans + 5,383 records]
+  AUD --> B[Evidence builder]
   B --> EJ[apps/web/data/evidence.json]
   B --> AC[apps/web/data/audit-corpus.json]
   EJ --> PAGES[Arena · Proof · Curve · Pod · Exploits]
   AC --> API["/api/audit (server only)"]
+  REL --> VR["pnpm verify:runs"]
+  EJ --> VR
 ```
 
-- **Private side.** Raw run artifacts, provider responses and budget files stay in the ignored `.heist/` directory. They are never committed or deployed.
-- **The builder.** It exports only what the site needs: per-arm summaries, the full breach and held records (canaries redacted), exploit snippets, the adaptive search tree, the Kite refusals and the same-attack matrix. It computes the exact Clopper-Pearson upper bounds shown on the site.
+- **Kept out of Git.** Spending budgets, approval logs, observer journals and raw provider HTTP responses stay in the ignored `.heist/` directory. Verdicts never depend on them.
+- **The run bundle.** [`runs-v1`](https://github.com/Manuel-dev01/heist/releases/tag/runs-v1) is a 1.9 MB release asset. It holds the four frozen run plans (arm configs, full corpus, plan hashes) and every attempt entry verbatim: D2 1,040, D3 3,780 and GPT-5.5 563.
+- **The builder.** It exports only what the site needs: per-arm summaries, the full breach and held records (verbatim), exploit snippets, the adaptive search tree, the Kite refusals and the same-attack matrix. It computes the exact Clopper-Pearson upper bounds shown on the site.
 - **The corpus file.** `audit-corpus.json` holds the slim 1,000-attack corpus: id, goal, channel and a 140-character snippet. It is imported only by server code, and we verified it is absent from the client bundles.
-- **Re-checks.** The bundled records are re-verified from scratch by `/proof`, `/api/proof`, `pnpm demo` and the test suite.
+- **Closing the loop.** `pnpm verify:runs` ([`apps/web/scripts/verify-runs.ts`](../apps/web/scripts/verify-runs.ts)) runs the following against the pinned asset hash:
+  1. re-validates each plan with the engine's own `parseBenchmarkPlan`;
+  2. for all 5,383 records, recomputes the hash, re-runs the oracle and replays the saved decisions through `runAttempt`;
+  3. recomputes every vault number and fails if any differs from `evidence.json`.
+
+  A tampered bundle fails at each layer: asset hash, record hash, oracle, replay and the recomputed count. `/proof`, `/api/proof` and `pnpm demo` re-verify the two bundled records on their own.
 
 ## The policy audit
 
@@ -294,7 +304,7 @@ flowchart LR
 | `apps/engine` | Corpus, plans, scheduling, budgets, verifiers, surrogate search, store adapter |
 | `apps/web` | Evidence re-derivation, Kite evidence, same-attack rows, audit outcomes and fixes, route guards and rate limits, x402 binding |
 
-GitHub Actions ([`.github/workflows/ci.yml`](../.github/workflows/ci.yml)) runs on every push: frozen install, strict typecheck, all tests, production build, the offline `pnpm demo` and a dependency audit.
+GitHub Actions ([`.github/workflows/ci.yml`](../.github/workflows/ci.yml)) runs on every push: frozen install, strict typecheck, all tests, production build, the offline `pnpm demo`, the full-run verification `pnpm verify:runs` and a dependency audit.
 
 Delivery is continuous: the GitHub repository is connected to the Vercel project (root `apps/web`, frozen pnpm install). Every push to `main` deploys to production at https://heist-khaki.vercel.app, and every pull request gets its own preview deployment. Preview hosts pass the same-origin guard through `VERCEL_BRANCH_URL` and `VERCEL_URL`.
 

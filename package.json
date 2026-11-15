@@ -14,6 +14,7 @@
     "dev": "turbo run dev",
     "build:packages": "turbo run build --filter=./packages/* --output-logs=errors-only",
     "demo": "pnpm --silent build:packages && tsx apps/web/scripts/demo.ts",
+    "verify:runs": "pnpm --silent build:packages && tsx apps/web/scripts/verify-runs.ts",
     "demo:foundation": "pnpm --silent build:packages && tsx apps/engine/src/cli.ts",
     "demo:benchmark": "pnpm --silent build:packages && tsx apps/engine/src/benchmark-cli.ts",
     "inspect:surrogate": "tsx apps/engine/src/surrogate-inspect-cli.ts",

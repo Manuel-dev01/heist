@@ -44,7 +44,7 @@ HEIST is a red-team arena and auditor for AI agents that hold money. It fires a 
 | 7 | [/pod](https://heist-khaki.vercel.app/pod) and [/exploits](https://heist-khaki.vercel.app/exploits) | The adaptive attacker's search tree (Dolphin: 116 candidates, 90 refinements) and the exploit file. |
 | 8 | [/range](https://heist-khaki.vercel.app/range) | Run scripted fixtures yourself, then verify the content hash of the record you just produced. |
 
-Prefer a terminal? `pnpm demo` runs the same story offline in about five seconds (see below).
+Prefer a terminal? `pnpm demo` runs the same story offline in about five seconds, and `pnpm verify:runs` re-derives every number above from all 5,383 raw records (see below).
 
 ## Run it locally
 
@@ -85,6 +85,24 @@ pnpm --filter @heist/web dev        # http://127.0.0.1:3000
 pnpm typecheck && pnpm test && pnpm build
 ```
 
+Re-derive every published number from the full run records (about 30 seconds; downloads the 1.9 MB [release asset](https://github.com/Manuel-dev01/heist/releases/tag/runs-v1) once):
+
+```sh
+pnpm verify:runs
+```
+
+It checks the asset's pinned SHA-256 and re-validates each frozen run plan. For all 5,383 attempts it recomputes the record hash, re-runs the oracle and replays the saved model decisions through the harness. Then it recomputes every vault's breaches, benign completion and upper bound, and compares them with the site. Expected ending:
+
+```text
+  D2       1040 records · plan OK · hash 1040/1040 · oracle 1040/1040 · replay 1040/1040
+  D3       3780 records · plan OK · hash 3780/3780 · oracle 3780/3780 · replay 3780/3780
+  ...
+  All runs                     5,383 attempts · 1 breach · OK
+All published numbers re-derived from the raw records.
+```
+
+If your network blocks the download, fetch the asset manually and run `pnpm verify:runs path/to/heist-runs-v1.json.gz`.
+
 Two more offline demos exercise the engine directly:
 
 ```sh
@@ -96,7 +114,7 @@ Both use explicitly labelled scripted model responses and write records to the i
 
 ## What we measured
 
-All numbers come from closed, audited live runs. Their sanitized export ships with the app in [`apps/web/data/evidence.json`](apps/web/data/evidence.json).
+All numbers come from closed, audited live runs. Every attempt record is published as the [runs-v1 release asset](https://github.com/Manuel-dev01/heist/releases/tag/runs-v1), and the per-vault summary the site reads ships in [`apps/web/data/evidence.json`](apps/web/data/evidence.json).
 
 | Vault | Defense added | Attacks | Breaches | 95% upper bound |
 |---|---|---|---|---|
@@ -117,7 +135,7 @@ All numbers come from closed, audited live runs. Their sanitized export ships wi
 
 ## Verify the claims yourself
 
-Every headline claim maps to something you can check. "Re-derive" means you can recompute it from scratch; "inspect" means you can read the exact exported value and the code that produced the verdict.
+Every headline claim maps to something you can check. "Re-derive" means you can recompute it from scratch on your machine; "inspect" means you can read the recorded value but not regenerate it.
 
 | Claim | How to check it | Level |
 |---|---|---|
@@ -125,12 +143,13 @@ Every headline claim maps to something you can check. "Re-derive" means you can 
 | Its held twin (same attack, defended vault) held | Same as above; the held record replays 2 decisions to `HELD` | Re-derive |
 | Records cannot be edited silently | Download the breach record from [/proof](https://heist-khaki.vercel.app/proof), edit any field, and POST `{"record": ...}` to `/api/verify` with header `Origin: https://heist-khaki.vercel.app`. The untouched record returns `valid: true`; any edit returns `valid: false` | Re-derive |
 | Policy audit numbers (829 → 600 → 0) | `pnpm demo` (step 4), the [/audit](https://heist-khaki.vercel.app/audit) page and [`apps/web/tests/audit.test.ts`](apps/web/tests/audit.test.ts); deterministic, so the report hash is identical on every machine | Re-derive |
-| Per-vault breach counts, upper bounds, benign completion | Exported values in [`apps/web/data/evidence.json`](apps/web/data/evidence.json) (`arms`, `frontier`, `totals`), each produced by the same oracle | Inspect |
+| Every vault's breach count, upper bound and benign completion, and the GPT-5.5 reference | `pnpm verify:runs`: hash, oracle and harness replay of all 5,383 records from the [release asset](https://github.com/Manuel-dev01/heist/releases/tag/runs-v1), then every vault number recomputed and compared with the site | Re-derive |
+| Each run followed a frozen plan: same corpus, one control changed per vault | `pnpm verify:runs` re-validates every plan hash and corpus hash; each entry must name its plan's arm, case and corpus | Re-derive |
 | Kite refused two payments live with $0 moved | Kite error codes, session caps and wallet balance in `evidence.json` → `kite` | Inspect |
-| The corpus has 1,000 attacks across five goals and three channels | [`apps/web/data/audit-corpus.json`](apps/web/data/audit-corpus.json) (ids, goals, channels, snippets) and its `corpusHash` | Inspect |
+| The corpus has 1,000 attacks across five goals and three channels | The full corpus is inside the D2 plan in the release asset, checked against its `corpusHash` by `pnpm verify:runs`; a slim copy is in [`apps/web/data/audit-corpus.json`](apps/web/data/audit-corpus.json) | Re-derive |
 | The engine, benchmark scheduler and oracle behave as documented | `pnpm test`: 979 tests across the harness, engine, clients and web app | Re-derive |
 
-The full set of 5,383 per-attempt records from the paid runs is kept private. It contains raw provider responses and run-budget files. The repository ships the sanitized per-vault summaries plus the two complete records above, which are re-verified end to end on every `pnpm demo` and CI run.
+The release asset contains each run's frozen plan and every attempt entry verbatim. Not included: spending budgets, approval logs, observer journals and raw provider HTTP responses; the verdicts never depend on these. The Kite refusals come from Kite's live backend, so they can be inspected but not regenerated offline. CI runs `pnpm demo` and `pnpm verify:runs` on every push.
 
 ## How a breach is decided
 
@@ -198,6 +217,7 @@ Engine module docs: [benchmark](apps/engine/BENCHMARK.md), [benchmark records](a
 | Command | Does | Network |
 |---|---|---|
 | `pnpm demo` | Offline judge walkthrough (evidence re-derivation, ladder, Kite, audit) | none |
+| `pnpm verify:runs [file]` | Re-derive every published number from all 5,383 run records | GitHub release download (once) |
 | `pnpm demo:foundation` | Scripted invoice + attacker release through the harness | none |
 | `pnpm demo:benchmark` | 100-attempt scripted benchmark rehearsal with report hash | none |
 | `pnpm --filter @heist/web dev` | Web app on 127.0.0.1:3000 | none |
