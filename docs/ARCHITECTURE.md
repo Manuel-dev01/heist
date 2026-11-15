@@ -209,6 +209,8 @@ flowchart LR
   2. for all 5,383 records, recomputes the hash, re-runs the oracle and replays the saved decisions through `runAttempt`;
   3. recomputes every vault number and fails if any differs from `evidence.json`.
 
+  4. recomputes a two-level `heist-sha256-ordered-v1` Merkle tree: one root per run, then a top root over the four. It reads the anchoring transaction from Kite testnet (block 22,044,909) and checks that it carries the same root.
+
   A tampered bundle fails at each layer: asset hash, record hash, oracle, replay and the recomputed count. `/proof`, `/api/proof` and `pnpm demo` re-verify the two bundled records on their own.
 
 ## The policy audit

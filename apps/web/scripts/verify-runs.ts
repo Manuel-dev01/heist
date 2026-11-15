@@ -13,9 +13,10 @@ import { createHash } from 'node:crypto';
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname } from 'node:path';
 import { gunzipSync } from 'node:zlib';
-import { canonicalJson, evaluateOutcome, hashAttemptRecord, runAttempt, type AttemptRecord, type HarnessConfigInput, type TaskInput } from '@heist/harness';
+import { buildMerkleBatch, canonicalJson, evaluateOutcome, hashAttemptRecord, runAttempt, type AttemptRecord, type HarnessConfigInput, type TaskInput } from '@heist/harness';
 import { parseBenchmarkPlan } from '../../engine/src/benchmark';
 import { evidence } from '../lib/evidence';
+import { ANCHOR } from '../lib/anchor';
 
 const RELEASE_URL = 'https://github.com/Manuel-dev01/heist/releases/download/runs-v1/heist-runs-v1.json.gz';
 const BUNDLE_SHA256 = 'fa5d38719cdb9f486b9027061ee90069e72fc884f2cf99c2e3bbd2d49c8b7cbb';
@@ -142,5 +143,24 @@ console.log(`  ${'All runs'.padEnd(28)} ${total.toLocaleString('en-US')} attempt
 const breach = [...d2, ...d3].find((e) => e.metadata.suite === 'attack' && breached(e.record));
 if (breach) console.log(dim(`  The one breach: ${breach.caseId} on ${breach.armId}, record ${breach.record.attemptHash.slice(0, 16)}… (same as /proof)`));
 
+console.log('\n' + bold('3 · On-chain anchor (Kite testnet)') + '\n' + dim('─'.repeat(72)));
+// Recompute every run root and the top root from the records, then read the anchoring transaction from Kite's chain.
+const runRoots = bundle.runs.map((r) => ({ id: r.id, rootHash: buildMerkleBatch(r.entries.map((e) => e.record.attemptHash)).rootHash }));
+const topRoot = buildMerkleBatch(runRoots.map((r) => r.rootHash!)).rootHash;
+const rootsOk = runRoots.every((r, i) => r.id === ANCHOR.runs[i]?.id && r.rootHash === ANCHOR.runs[i]?.rootHash) && topRoot === ANCHOR.topRoot;
+if (!rootsOk) fail(`Merkle roots recomputed from the records do not match the anchored roots`);
+console.log(`  Merkle roots recomputed from 5,383 records: top ${String(topRoot).slice(0, 16)}… · ${mark(rootsOk)}`);
+try {
+  const r = await fetch(ANCHOR.rpc, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ jsonrpc: '2.0', id: 1, method: 'eth_getTransactionByHash', params: [ANCHOR.txHash] }), signal: AbortSignal.timeout(20_000) });
+  const tx = ((await r.json()) as { result?: { input?: string; blockNumber?: string } }).result;
+  const onChain = tx?.input ? Buffer.from(tx.input.slice(2), 'hex').toString('utf8') : '';
+  const expected = `HEIST:runs-v1:${ANCHOR.algorithm}:${topRoot}`, chainOk = onChain === expected;
+  if (!chainOk) fail(`Kite testnet transaction ${ANCHOR.txHash} does not carry the recomputed root`);
+  console.log(`  ${ANCHOR.network} block ${tx?.blockNumber ? parseInt(tx.blockNumber, 16) : '?'} · tx ${ANCHOR.txHash.slice(0, 14)}… carries the same root · ${mark(chainOk)}`);
+  console.log(dim(`  ${ANCHOR.explorer}`));
+} catch {
+  console.log(dim(`  Could not reach ${ANCHOR.rpc} to read the anchor; roots were still recomputed. See ${ANCHOR.explorer}`));
+}
+
 if (failures) { console.error('\n' + red(`${failures} check(s) failed.`)); process.exit(1); }
-console.log('\n' + teal('All published numbers re-derived from the raw records.'));
+console.log('\n' + teal('All published numbers re-derived from the raw records, and their root matches the Kite anchor.'));

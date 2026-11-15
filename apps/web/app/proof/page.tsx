@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { AppHeader, Eyebrow, Footnote, Page } from '../../components/chrome';
 import { ReplayButton } from '../../components/replay-button';
 import { LiveVerify } from '../../components/live-verify';
+import { AnchorBadge } from '../../components/anchor-badge';
 import { C, css, mono } from '../../lib/css';
 import { evidence, goalLabel, units } from '../../lib/evidence';
 
@@ -66,6 +67,7 @@ export default async function ProofPage({ searchParams }: { searchParams: Promis
             <ReplayButton which={which} recorded={r.attemptHash} />
             <a href={'data:application/json;charset=utf-8,' + encodeURIComponent(JSON.stringify(r, null, 2))} download={'heist-' + which + '-record.json'} style={css(`font-family:${mono};font-size:12px;color:${C.dim}`)}>Download full record (.json)</a>
             <LiveVerify />
+            <AnchorBadge />
           </div>
         </div>
       </div>
