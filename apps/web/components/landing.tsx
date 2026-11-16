@@ -342,7 +342,11 @@ export class Landing extends Component {
           </div>
           <div style={css(`display:flex;justify-content:space-between;gap:24px;flex-wrap:wrap;font-family:${mono};font-size:12px;color:#6b7179;border-top:1px solid #23272d;padding-top:20px`)}>
             <div>{fmt(evidence.totals.attempts)} recorded attempts · {evidence.totals.breaches} verified breach · deterministic, not AI-judged · GPT-5.5 reference {evidence.frontier.breaches} / {evidence.frontier.attacks} · synthetic funds</div>
-            <div style={css('display:flex;gap:8px;flex-wrap:wrap')}>{['OPENSERV', 'DOLPHIN', 'KITE', 'REPPO'].map((x) => <div key={x} style={css('border:1px dashed #3a3f46;padding:4px 8px')}>{x}</div>)}</div>
+            <div style={css('display:flex;gap:8px;flex-wrap:wrap')}>{([['OpenServ', '/partners/openserv.png', 'https://www.openserv.ai'], ['Dolphin', '/partners/dolphin-96.png', 'https://dphn.ai'], ['Kite', '/partners/kite.svg', 'https://gokite.ai'], ['Reppo', '/partners/reppo.png', 'https://reppo.xyz']] as const).map(([name, src, href]) => (
+              <a key={name} href={href} target="_blank" rel="noopener noreferrer" title={'Built with ' + name} style={css('display:inline-flex;align-items:center;gap:7px;border:1px solid #2f343b;padding:5px 10px 5px 6px;color:#c9ced6;background:#0c0e11')}>
+                <img src={src} alt="" width={18} height={18} style={css('width:18px;height:18px;border-radius:5px;object-fit:contain')} />{name}
+              </a>
+            ))}</div>
           </div>
         </div>
       </div>
