@@ -19,11 +19,12 @@ HEIST is a red-team arena and auditor for AI agents that hold money. It fires a 
 6. [How a breach is decided](#how-a-breach-is-decided)
 7. [The policy audit](#the-policy-audit)
 8. [Partner integrations](#partner-integrations)
-9. [Architecture](#architecture)
-10. [Repository map](#repository-map)
-11. [Command reference](#command-reference)
-12. [Safety, scope and honest limits](#safety-scope-and-honest-limits)
-13. [Roadmap](#roadmap)
+9. [Built before and during the hackathon](#built-before-and-during-the-hackathon)
+10. [Architecture](#architecture)
+11. [Repository map](#repository-map)
+12. [Command reference](#command-reference)
+13. [Safety, scope and honest limits](#safety-scope-and-honest-limits)
+14. [Roadmap](#roadmap)
 
 ## The 60-second version
 
@@ -195,6 +196,25 @@ The audit is deterministic and self-reported: it scores the setup you describe, 
 | **Kite** | Kite Passport spending caps were exercised live. An owner passkey approved capped sessions, and Kite's backend refused `payment_target_forbidden` (host outside the service catalog) and `session_rule_exceeded` (catalog price above the per-payment cap), with $0 moved. All 5,383 records are anchored on **Kite testnet** ([tx](https://testnet.kitescan.ai/tx/0x395577374ec313e0de97436181be4c39da317a15406efd8b570a49ab89492102)), checked by `pnpm verify:runs`. An x402 payout route ([`apps/web/app/api/x402/payout`](apps/web/app/api/x402/payout/route.ts)) quotes Kite payment requirements and settles only on explicit facilitator confirmation. |
 | **Dolphin** | [`@heist/pod`](packages/pod/README.md) is the adaptive attacker: generation, refinement and native tool round trips on Dolphin, screened against the real raw vault. |
 | **Reppo** | [`@heist/reppo`](packages/reppo/README.md) implements Reppo's text Evaluation API (one live synthetic evaluation, kept separate from the oracle). All 5,383 live records are **published on Reppo** as pod #4125 in the "RELY – Agent Reliability Records" Datanet on Base ([mint tx](https://basescan.org/tx/0xb8b640ff8bb6c15ab98a3fe9874ef58c9e986f8c6f28f179d9fb518991146c7b)), pointing at the [runs-v1 release](https://github.com/Manuel-dev01/heist/releases/tag/runs-v1). |
+
+## Built before and during the hackathon
+
+For full transparency with the judging panel about work done before the November 2 start date, the commit history shows every step.
+
+**Pre-hackathon foundation (October 28–30, 14 commits).**
+- **Offline engine:** the isolated wallet harness, bigint ledger and deterministic oracle (`packages/harness`), plus the benchmark engine, corpus generation and the adaptive search algorithm (`apps/engine`).
+- **Client stubs:** first versions of the SERV and Dolphin clients (`packages/serv`, `packages/pod`), checked with a few small, capped live calls.
+- **A local practice page** for scripted fixtures.
+- **Not yet built:** no measured results, no product site, and no Kite or Reppo integration.
+
+**Built during the hackathon (November 2–15).**
+- **SERV:** extended `@heist/serv` so each defense layer (raw, default, Prompt Guard, Kronos, Multipath, Shadow Agent) is one controlled variable, then ran every live measurement: D2, the seven-vault D3 ladder and the GPT-5.5 reference (5,383 attempts).
+- **Kite:** live Kite Passport spending-cap tests (two refusals from Kite's backend), the x402 payout route, and the on-chain anchor of the Merkle root over all 5,383 records.
+- **Dolphin:** the live adaptive attack run (116 candidates, 90 refinements), shown as the Pod search tree.
+- **Reppo:** the Evaluation API client with one live evaluation, and the 5,383 run records minted and published as Datanet pod #4125.
+- **Full application:** the Next.js production site (`apps/web`) with the live vault at `/rob`, the policy audit, proof replay and the Defense Curve; the MCP server (`packages/mcp`); the published run records with `pnpm verify:runs`; CI and continuous deployment.
+
+**After the deadline (November 16).** Two small polish commits: a consistent Vault 00 label on the landing page and partner logos in the footer. No features or numbers changed.
 
 ## Architecture
 
