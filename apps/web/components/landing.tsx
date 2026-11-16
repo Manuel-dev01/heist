@@ -8,7 +8,7 @@ import { evidence, vaultStats } from '../lib/evidence';
 const R = '#ff3b30', T = '#7fe3c4';
 const fmt = (n) => n.toLocaleString('en-US');
 const ARMS = evidence.arms.map((a) => { const s = vaultStats(a); return { n: a.n, name: a.name, layer: a.layer, br: s.breaches + ' / ' + fmt(s.attacks), col: s.breaches ? R : T }; });
-const COLS = [...evidence.arms.map((a, i) => ({ name: a.n + ' ' + a.name, layer: i === 0 ? 'raw · D2' : a.layer.replace('+ ', ''), br: (i === 0 ? 1 : a.breaches) + '/500', col: i === 0 ? R : T })),
+const COLS = [...evidence.arms.map((a, i) => ({ name: a.n + ' ' + a.name, layer: i === 0 ? 'raw · 500 shown' : a.layer.replace('+ ', ''), br: i === 0 ? vaultStats(a).breaches + '/' + fmt(vaultStats(a).attacks) : a.breaches + '/500', col: i === 0 ? R : T })),
   { name: 'REF GPT-5.5', layer: 'frontier', br: evidence.frontier.breaches + '/500', col: '#9aa0a8' }];
 const B = evidence.breach, H = B.record.attemptHash;
 const AD = evidence.adaptive;
